@@ -1,0 +1,33 @@
+{
+  "name": "@laikatest/js-client",
+  "version": "1.0.0",
+  "description": "JavaScript SDK for fetching LaikaTest prompt templates via API",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "node test.js",
+    "example": "node usage-examples.js"
+  },
+  "keywords": [
+    "laikatest",
+    "prompts",
+    "sdk",
+    "client",
+    "ai",
+    "llm",
+    "prompt-management"
+  ],
+  "author": "LaikaTest Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForecloseAI/laikatest_client_js"
+  },
+  "bugs": {
+    "url": "https://github.com/ForecloseAI/laikatest_client_js/issues"
+  },
+  "homepage": "https://github.com/ForecloseAI/laikatest_client_js#readme"
+}

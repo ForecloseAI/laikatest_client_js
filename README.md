@@ -1,0 +1,332 @@
+# LaikaTest Prompts Client
+
+JavaScript SDK for fetching LaikaTest prompt templates via API. Zero dependencies, intelligent caching, and easy-to-use interface.
+
+## Installation
+
+```bash
+npm install @laikatest/prompts-client
+```
+
+## Quick Start
+
+```javascript
+const { LaikaTest } = require('@laikatest/prompts-client');
+
+// Initialize client with your API key and project ID
+const client = new LaikaTest(
+  'your-api-key-here',
+  'your-project-id-here'
+);
+
+// Fetch a prompt
+const prompt = await client.getPrompt('greeting-prompt');
+console.log(prompt.content);
+
+// Don't forget to cleanup when done
+client.destroy();
+```
+
+## Authentication
+
+### Getting Your API Key
+
+1. Log in to your LaikaTest dashboard
+2. Navigate to Settings → API Keys
+3. Create a new API key
+4. Copy the key and store it securely (e.g., in environment variables)
+
+### Getting Your Project ID
+
+1. Navigate to your project in the LaikaTest dashboard
+2. The project ID is visible in the URL: `/dashboard/projects/{project-id}`
+3. Or find it in Project Settings
+
+## Basic Usage
+
+### Fetching Current Version
+
+By default, `getPrompt()` fetches the current published version of a prompt:
+
+```javascript
+const { LaikaTest } = require('@laikatest/prompts-client');
+
+const client = new LaikaTest(
+  process.env.LAIKATEST_API_KEY,
+  process.env.LAIKATEST_PROJECT_ID
+);
+
+try {
+  const result = await client.getPrompt('welcome-message');
+  console.log('Prompt content:', result.content);
+} catch (error) {
+  console.error('Error fetching prompt:', error.message);
+} finally {
+  client.destroy();
+}
+```
+
+### Fetching Specific Version
+
+To fetch a specific version of a prompt, provide the version ID:
+
+```javascript
+const result = await client.getPrompt('welcome-message', {
+  versionId: 'version-uuid-here'
+});
+
+console.log('Version content:', result.content);
+```
+
+### Bypassing Cache
+
+To force a fresh fetch from the API, bypassing the cache:
+
+```javascript
+const result = await client.getPrompt('welcome-message', {
+  bypassCache: true
+});
+```
+
+## Configuration Options
+
+You can customize the client behavior with configuration options:
+
+```javascript
+const client = new LaikaTest(apiKey, projectId, {
+  // Base URL for the API (default: 'https://api.laikatest.com')
+  baseUrl: 'https://api.laikatest.com',
+
+  // Request timeout in milliseconds (default: 10000)
+  timeout: 15000,
+
+  // Cache TTL in milliseconds (default: 1800000 - 30 minutes)
+  cacheTTL: 60 * 60 * 1000, // 1 hour
+
+  // Enable/disable caching (default: true)
+  cacheEnabled: true
+});
+```
+
+## Caching Behavior
+
+The client implements intelligent caching to minimize API calls:
+
+- **Default TTL**: 30 minutes (configurable)
+- **Cache Key**: Combines project ID, prompt name, and version ID
+- **Automatic Cleanup**: Expired entries removed every 5 minutes
+- **Memory Efficient**: Stores only prompt content and metadata
+
+### Cache Control
+
+```javascript
+// Disable caching entirely
+const client = new LaikaTest(apiKey, projectId, {
+  cacheEnabled: false
+});
+
+// Adjust cache TTL to 1 hour
+const client = new LaikaTest(apiKey, projectId, {
+  cacheTTL: 60 * 60 * 1000
+});
+
+// Bypass cache for a single request
+const result = await client.getPrompt('prompt-name', {
+  bypassCache: true
+});
+```
+
+## Error Handling
+
+The client provides specific error classes for different failure scenarios:
+
+```javascript
+const {
+  LaikaTest,
+  LaikaServiceError,
+  NetworkError,
+  ValidationError,
+  AuthenticationError
+} = require('@laikatest/prompts-client');
+
+try {
+  const result = await client.getPrompt('my-prompt');
+} catch (error) {
+  if (error instanceof ValidationError) {
+    // Invalid input (empty prompt name, invalid IDs, etc.)
+    console.error('Validation error:', error.message);
+  } else if (error instanceof AuthenticationError) {
+    // Invalid API key or authentication failed
+    console.error('Authentication error:', error.message);
+  } else if (error instanceof NetworkError) {
+    // Network issues, timeout, connection failed
+    console.error('Network error:', error.message);
+  } else if (error instanceof LaikaServiceError) {
+    // API returned an error (404, 403, 500, etc.)
+    console.error('Service error:', error.message);
+    console.error('Status code:', error.statusCode);
+  } else {
+    // Unexpected error
+    console.error('Unexpected error:', error);
+  }
+}
+```
+
+### Common Error Scenarios
+
+| Error Type | Cause | Solution |
+|------------|-------|----------|
+| `ValidationError` | Empty prompt name or invalid UUID | Check your inputs |
+| `AuthenticationError` | Invalid API key | Verify your API key |
+| `LaikaServiceError` (404) | Prompt not found | Check prompt name and project |
+| `LaikaServiceError` (403) | Access denied | Verify project ownership |
+| `NetworkError` | Connection timeout | Check network/API availability |
+
+## API Reference
+
+### `new LaikaTest(apiKey, projectId, options?)`
+
+Creates a new client instance.
+
+**Parameters:**
+- `apiKey` (string, required): Your LaikaTest API key
+- `projectId` (string, required): UUID of your project
+- `options` (object, optional): Configuration options
+
+**Options:**
+- `baseUrl` (string): API base URL (default: `'https://api.laikatest.com'`)
+- `timeout` (number): Request timeout in ms (default: `10000`)
+- `cacheTTL` (number): Cache time-to-live in ms (default: `1800000`)
+- `cacheEnabled` (boolean): Enable caching (default: `true`)
+
+### `client.getPrompt(promptName, options?)`
+
+Fetches prompt content by name.
+
+**Parameters:**
+- `promptName` (string, required): Name of the prompt template
+- `options` (object, optional): Fetch options
+
+**Options:**
+- `versionId` (string): Specific version to fetch
+- `bypassCache` (boolean): Force fresh API fetch
+
+**Returns:** `Promise<{ content: string }>`
+
+**Throws:**
+- `ValidationError`: Invalid inputs
+- `AuthenticationError`: Auth failure
+- `NetworkError`: Network issues
+- `LaikaServiceError`: API errors
+
+### `client.destroy()`
+
+Cleanup resources and stop background processes. Always call this when done.
+
+## Best Practices
+
+### 1. Use Environment Variables
+
+```javascript
+const client = new LaikaTest(
+  process.env.LAIKATEST_API_KEY,
+  process.env.LAIKATEST_PROJECT_ID
+);
+```
+
+### 2. Always Call destroy()
+
+```javascript
+const client = new LaikaTest(apiKey, projectId);
+
+try {
+  const prompt = await client.getPrompt('my-prompt');
+  // Use prompt...
+} finally {
+  client.destroy(); // Cleanup
+}
+```
+
+### 3. Handle Errors Gracefully
+
+```javascript
+try {
+  const prompt = await client.getPrompt('my-prompt');
+  return prompt.content;
+} catch (error) {
+  // Log error and provide fallback
+  console.error('Failed to fetch prompt:', error);
+  return 'Default fallback prompt content';
+}
+```
+
+### 4. Reuse Client Instances
+
+Create one client instance and reuse it for multiple requests:
+
+```javascript
+// Good: Reuse client
+const client = new LaikaTest(apiKey, projectId);
+const prompt1 = await client.getPrompt('prompt-1');
+const prompt2 = await client.getPrompt('prompt-2');
+client.destroy();
+
+// Avoid: Creating multiple clients
+const client1 = new LaikaTest(apiKey, projectId);
+const prompt1 = await client1.getPrompt('prompt-1');
+client1.destroy();
+
+const client2 = new LaikaTest(apiKey, projectId);
+const prompt2 = await client2.getPrompt('prompt-2');
+client2.destroy();
+```
+
+### 5. Use TypeScript for Type Safety
+
+```typescript
+import { LaikaTest, PromptResponse } from '@laikatest/prompts-client';
+
+const client = new LaikaTest(apiKey, projectId);
+const result: PromptResponse = await client.getPrompt('my-prompt');
+```
+
+## Examples
+
+See `usage-examples.js` for comprehensive working examples including:
+- Basic prompt fetching
+- Version-specific retrieval
+- Error handling patterns
+- Cache configuration
+- Multiple clients for different projects
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+The test suite includes a built-in mock server and covers:
+- Successful prompt fetching
+- Version-specific fetching
+- Cache behavior
+- Error scenarios
+- Input validation
+- Cleanup functionality
+
+## Requirements
+
+- Node.js >= 12.0.0
+- No external dependencies
+
+## License
+
+MIT
+
+## Support
+
+For issues and questions:
+- GitHub Issues: https://github.com/laikatest/prompts-client-js/issues
+- Documentation: https://docs.laikatest.com
+- Email: support@laikatest.com
