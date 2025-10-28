@@ -4,9 +4,17 @@
   "description": "JavaScript SDK for fetching LaikaTest prompt templates via API",
   "main": "index.js",
   "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib/",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "test": "node test.js",
-    "example": "node usage-examples.js"
+    "example": "node usage-examples.js",
+    "prepublishOnly": "node test.js"
   },
   "keywords": [
     "laikatest",

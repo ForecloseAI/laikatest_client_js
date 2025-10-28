@@ -1,0 +1,24 @@
+# Test files
+test.js
+usage-examples.js
+
+# Git files
+.git
+.gitignore
+
+# Development files
+*.log
+npm-debug.log*
+.DS_Store
+
+# CI/CD
+.github
+.travis.yml
+.circleci
+
+# Editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
