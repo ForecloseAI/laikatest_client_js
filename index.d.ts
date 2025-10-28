@@ -1,4 +1,4 @@
-// Type definitions for @laikatest/prompts-client
+// Type definitions for @laikatest/js-client
 // Project: LaikaTest SDK
 // Definitions by: LaikaTest Team
 

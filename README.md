@@ -5,13 +5,13 @@ JavaScript SDK for fetching LaikaTest prompt templates via API. Zero dependencie
 ## Installation
 
 ```bash
-npm install @laikatest/prompts-client
+npm install @laikatest/js-client
 ```
 
 ## Quick Start
 
 ```javascript
-const { LaikaTest } = require('@laikatest/prompts-client');
+const { LaikaTest } = require('@laikatest/js-client');
 
 // Initialize client with your API key and project ID
 const client = new LaikaTest(
@@ -49,7 +49,7 @@ client.destroy();
 By default, `getPrompt()` fetches the current published version of a prompt:
 
 ```javascript
-const { LaikaTest } = require('@laikatest/prompts-client');
+const { LaikaTest } = require('@laikatest/js-client');
 
 const client = new LaikaTest(
   process.env.LAIKATEST_API_KEY,
@@ -147,7 +147,7 @@ const {
   NetworkError,
   ValidationError,
   AuthenticationError
-} = require('@laikatest/prompts-client');
+} = require('@laikatest/js-client');
 
 try {
   const result = await client.getPrompt('my-prompt');
@@ -284,7 +284,7 @@ client2.destroy();
 ### 5. Use TypeScript for Type Safety
 
 ```typescript
-import { LaikaTest, PromptResponse } from '@laikatest/prompts-client';
+import { LaikaTest, PromptResponse } from '@laikatest/js-client';
 
 const client = new LaikaTest(apiKey, projectId);
 const result: PromptResponse = await client.getPrompt('my-prompt');

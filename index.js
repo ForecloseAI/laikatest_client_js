@@ -3,7 +3,7 @@
 
 const { PromptCache } = require('./lib/cache');
 const { fetchPrompt } = require('./lib/prompts');
-const { validateApiKey, validateProjectId, validatePromptName } = require('./lib/validation');
+const { validateApiKey, validateProjectId, validatePromptName, validateVersionId } = require('./lib/validation');
 const {
   LaikaServiceError,
   NetworkError,
@@ -33,6 +33,8 @@ class LaikaTest {
     validatePromptName(promptName);
 
     const versionId = options.versionId || null;
+    validateVersionId(versionId);
+
     const bypassCache = options.bypassCache || false;
 
     // Check cache first if enabled and not bypassed
