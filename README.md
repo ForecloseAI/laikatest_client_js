@@ -20,6 +20,10 @@ const client = new LaikaTest('your-api-key-here');
 const prompt = await client.getPrompt('greeting-prompt');
 console.log(prompt.content);
 
+// Compile with variables
+const compiled = prompt.compile({ name: 'Ada' });
+console.log(compiled);
+
 // Don't forget to cleanup when done
 client.destroy();
 ```
@@ -47,6 +51,8 @@ const client = new LaikaTest(process.env.LAIKATEST_API_KEY);
 try {
   const result = await client.getPrompt('welcome-message');
   console.log('Prompt content:', result.content);
+  const compiled = result.compile({ name: 'Ada' });
+  console.log('Compiled content:', compiled);
 } catch (error) {
   console.error('Error fetching prompt:', error.message);
 } finally {
@@ -64,6 +70,7 @@ const result = await client.getPrompt('welcome-message', {
 });
 
 console.log('Version content:', result.content);
+console.log('Compiled:', result.compile({ name: 'Ada' }));
 ```
 
 ### Bypassing Cache
@@ -198,13 +205,22 @@ Fetches prompt content by name.
 - `versionId` (string): Specific version to fetch (numeric format: "10" or "v10")
 - `bypassCache` (boolean): Force fresh API fetch
 
-**Returns:** `Promise<{ content: string }>`
+**Returns:** `Promise<Prompt>`
 
 **Throws:**
 - `ValidationError`: Invalid inputs (e.g., empty prompt name, invalid version ID format)
 - `AuthenticationError`: Auth failure
 - `NetworkError`: Network issues
 - `LaikaServiceError`: API errors
+
+### `prompt.compile(variables)`
+
+Compiles the fetched prompt by injecting variables into `{{placeholders}}`.
+
+**Parameters:**
+- `variables` (object): Key/value pairs for placeholder replacement
+
+**Returns:** Compiled prompt content matching the original structure (string, array, or object)
 
 ### `client.destroy()`
 
@@ -268,10 +284,11 @@ client2.destroy();
 ### 5. Use TypeScript for Type Safety
 
 ```typescript
-import { LaikaTest, PromptResponse } from '@laikatest/js-client';
+import { LaikaTest, Prompt } from '@laikatest/js-client';
 
 const client = new LaikaTest(apiKey);
-const result: PromptResponse = await client.getPrompt('my-prompt');
+const prompt: Prompt = await client.getPrompt('my-prompt');
+const compiled = prompt.compile({ name: 'Ada' });
 ```
 
 ## Examples

@@ -2,9 +2,9 @@
 // LaikaTest SDK - Main entry point
 
 const { PromptCache } = require('./lib/cache');
-const { fetchPrompt } = require('./lib/prompts');
+const { fetchPrompt } = require('./lib/prompt_utils');
 const { validateApiKey, validatePromptName, validateVersionId } = require('./lib/validation');
-const { injectVariables } = require('./lib/variables');
+const { Prompt } = require('./lib/prompt');
 const {
   LaikaServiceError,
   NetworkError,
@@ -40,7 +40,7 @@ class LaikaTest {
     if (this.cacheEnabled && !bypassCache) {
       const cached = this.cache.get(promptName, versionId);
       if (cached) {
-        return { content: cached };
+        return new Prompt(cached);
       }
     }
 
@@ -58,12 +58,7 @@ class LaikaTest {
       this.cache.set(promptName, versionId, content);
     }
 
-    return { content };
-  }
-
-  // Compile prompt content by injecting variables into {{variable}} placeholders
-  async compile(content, variables) {
-    return await injectVariables(content, variables);
+    return new Prompt(content);
   }
 
   // Cleanup resources and cache
@@ -77,6 +72,7 @@ class LaikaTest {
 // Export main class and error classes
 module.exports = {
   LaikaTest,
+  Prompt,
   LaikaServiceError,
   NetworkError,
   ValidationError,

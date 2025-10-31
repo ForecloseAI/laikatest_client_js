@@ -2,6 +2,18 @@
 // Project: LaikaTest SDK
 // Definitions by: LaikaTest Team
 
+export type PromptContent = string | Record<string, unknown> | Array<unknown>;
+
+export class Prompt<C = PromptContent> {
+  readonly content: C;
+
+  constructor(content: C);
+
+  compile<T = C>(variables: Record<string, unknown>): T;
+
+  toJSON(): { content: C };
+}
+
 export class LaikaTest {
   /**
    * Creates a new LaikaTest client
@@ -20,7 +32,7 @@ export class LaikaTest {
    * @throws {LaikaServiceError} If API returns an error
    * @throws {NetworkError} If network request fails
    */
-  getPrompt(promptName: string, options?: GetPromptOptions): Promise<PromptResponse>;
+  getPrompt<C = PromptContent>(promptName: string, options?: GetPromptOptions): Promise<Prompt<C>>;
 
   /**
    * Cleanup resources and stop background processes
@@ -77,12 +89,7 @@ export interface GetPromptOptions {
 /**
  * Response from getPrompt method
  */
-export interface PromptResponse {
-  /**
-   * The prompt content/template text
-   */
-  content: string;
-}
+export interface PromptResponse<C = PromptContent> extends Prompt<C> {}
 
 // ============================================================================
 // ERROR CLASSES
