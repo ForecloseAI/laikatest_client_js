@@ -4,6 +4,7 @@
 const { PromptCache } = require('./lib/cache');
 const { fetchPrompt } = require('./lib/prompts');
 const { validateApiKey, validatePromptName, validateVersionId } = require('./lib/validation');
+const { injectVariables } = require('./lib/variables');
 const {
   LaikaServiceError,
   NetworkError,
@@ -58,6 +59,11 @@ class LaikaTest {
     }
 
     return { content };
+  }
+
+  // Compile prompt content by injecting variables into {{variable}} placeholders
+  async compile(content, variables) {
+    return await injectVariables(content, variables);
   }
 
   // Cleanup resources and cache

@@ -10,8 +10,8 @@ const {
 
 // Test configuration
 const API_KEY = '<API_KEY>';
-const BASE_URL = 'http://localhost:3001';
-const TEST_PROMPT = 'test';
+const BASE_URL = 'https://api.laikatest.com';
+const TEST_PROMPT = 'sample';
 
 let passed = 0;
 let failed = 0;
@@ -268,6 +268,55 @@ async function testVersionedPrompts() {
   }
 }
 
+async function testVariableCompile() {
+  console.log('\n12. Variable Compilation');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+  try {
+
+  const promptContent = await client.getPrompt('var_test');
+
+  const variables = {
+    var: "World"
+  };
+  const compiled = await client.compile(promptContent, variables);
+  console.log('Compiled Prompt:', compiled);
+  assert(compiled, 'Compiles variables into prompt content');
+} catch (e) {
+  assert(false, 'Should compile variables without error', e.message);
+} finally {
+  client.destroy();
+  }
+}
+
+async function testChatCompile(){
+  console.log('\n13. Chat Variable Compilation');
+  
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+  try {
+
+  const promptContent = await client.getPrompt('var_chat');
+  
+  const variables = {
+    var1: "user1",
+    var2: "user2"
+  };
+  const compiled = await client.compile(promptContent, variables);
+  console.log('Compiled Chat Prompt:', compiled);
+  assert(compiled, 'Compiles variables into chat prompt content');
+} catch (e) {
+  assert(false, 'Should compile chat variables without error', e.message);
+} finally {
+  client.destroy();
+}
+}
+
 // Main test runner
 async function runTests() {
   console.log('╔════════════════════════════════════════════════════╗');
@@ -288,6 +337,8 @@ async function runTests() {
     await testTimeout();
     await testConcurrent();
     await testVersionedPrompts();
+    await testVariableCompile();
+    await testChatCompile();
   } catch (e) {
     console.error('\n✗ Test suite error:', e.message);
     process.exit(1);
