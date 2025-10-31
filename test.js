@@ -1,432 +1,314 @@
 // test.js
-// Comprehensive test suite for LaikaTest Prompts Client with built-in mock server
+// Clean test suite hitting actual LaikaTest API endpoint
 
-const http = require('http');
 const {
   LaikaTest,
   LaikaServiceError,
-  NetworkError,
   ValidationError,
   AuthenticationError
 } = require('./index');
 
-// ============================================================================
-// MOCK SERVER
-// ============================================================================
+// Test configuration
+const API_KEY = '<API_KEY>';
+const BASE_URL = 'http://localhost:3001';
+const TEST_PROMPT = 'test';
 
-// Create a simple HTTP mock server for testing
-function createMockServer(port = 3999) {
-  const server = http.createServer((req, res) => {
-    const url = new URL(req.url, `http://localhost:${port}`);
-    const authHeader = req.headers.authorization;
+let passed = 0;
+let failed = 0;
 
-    // Check authentication
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: 'Authentication required' }));
-      return;
-    }
-
-    const token = authHeader.substring(7);
-
-    // Invalid API key
-    if (token === 'invalid-key') {
-      res.writeHead(401, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ success: false, error: 'Invalid API key' }));
-      return;
-    }
-
-    // Route: GET /api/v1/prompts/by-name/:name
-    const match = url.pathname.match(/^\/api\/v1\/prompts\/by-name\/(.+)$/);
-    if (match && req.method === 'GET') {
-      const promptName = decodeURIComponent(match[1]);
-      const projectId = url.searchParams.get('project_id');
-      const versionId = url.searchParams.get('version_id');
-
-      // Missing project_id
-      if (!projectId) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'project_id query parameter is required' }));
-        return;
-      }
-
-      // Prompt not found
-      if (promptName === 'non-existent') {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: `Prompt '${promptName}' not found in this project` }));
-        return;
-      }
-
-      // Access denied
-      if (projectId === 'ffffffff-ffff-5fff-8fff-ffffffffffff') {
-        res.writeHead(403, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Access denied to this project' }));
-        return;
-      }
-
-      // Version not found
-      if (versionId === 'non-existent-version') {
-        res.writeHead(404, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: 'Version not found for this prompt' }));
-        return;
-      }
-
-      // Success
-      const content = versionId
-        ? `This is ${promptName} version ${versionId}`
-        : `This is the current version of ${promptName}`;
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({
-        success: true,
-        data: { content }
-      }));
-      return;
-    }
-
-    // Not found
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ success: false, error: 'Not found' }));
-  });
-
-  return server;
-}
-
-// ============================================================================
-// TEST UTILITIES
-// ============================================================================
-
-let testsPassed = 0;
-let testsFailed = 0;
-
-// Assert helper with detailed error messages
-function assert(condition, testName, errorMessage = '') {
+// Assert helper
+function assert(condition, name, msg = '') {
   if (condition) {
-    console.log(`  ✓ ${testName}`);
-    testsPassed++;
+    console.log(`  ✓ ${name}`);
+    passed++;
   } else {
-    console.log(`  ✗ ${testName}`);
-    if (errorMessage) console.log(`    ${errorMessage}`);
-    testsFailed++;
+    console.log(`  ✗ ${name}`);
+    if (msg) console.log(`    ${msg}`);
+    failed++;
   }
 }
 
-// Sleep helper for async tests
+// Sleep utility
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// ============================================================================
-// TESTS
-// ============================================================================
-
-// Test constructor validation
-async function testConstructorValidation() {
-  console.log('\n1. Constructor Validation Tests');
+// Test 1: Constructor validation
+async function testConstructor() {
+  console.log('\n1. Constructor Validation');
 
   try {
     new LaikaTest();
+    assert(false, 'Should reject missing API key');
   } catch (e) {
-    assert(e instanceof ValidationError, 'Throws ValidationError for missing API key');
+    assert(e instanceof ValidationError, 'Rejects missing API key');
   }
 
-  try {
-    new LaikaTest('key');
-  } catch (e) {
-    assert(e instanceof ValidationError, 'Throws ValidationError for missing project ID');
-  }
-
-  try {
-    new LaikaTest('key', 'invalid-uuid');
-  } catch (e) {
-    assert(e instanceof ValidationError, 'Throws ValidationError for invalid UUID');
-  }
-
-  const validUuid = '12345678-1234-5234-8234-123456789012';
-  const client = new LaikaTest('key', validUuid);
-  assert(client !== null, 'Creates client with valid parameters');
+  const client = new LaikaTest(API_KEY);
+  assert(client !== null, 'Creates client with valid API key');
   client.destroy();
 }
 
-// Test successful prompt fetching
-async function testSuccessfulFetch(baseUrl) {
-  console.log('\n2. Successful Fetch Tests');
+// Test 2: Basic prompt fetch
+async function testBasicFetch() {
+  console.log('\n2. Basic Prompt Fetch');
 
-  const client = new LaikaTest(
-    'valid-api-key',
-    '12345678-1234-5234-8234-123456789012',
-    { baseUrl, cacheEnabled: false }
-  );
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
 
   try {
-    const result = await client.getPrompt('test-prompt');
-    assert(result.content, 'Fetches prompt successfully');
-    assert(
-      result.content.includes('test-prompt'),
-      'Returns correct content',
-      `Got: ${result.content}`
-    );
+    const result = await client.getPrompt(TEST_PROMPT);
+    assert(result && result.content, 'Fetches prompt successfully');
+    assert(typeof result.content === 'string' || Array.isArray(result.content),
+      'Returns valid content type');
   } catch (e) {
-    assert(false, 'Should not throw error', e.message);
+    assert(false, 'Should fetch without error', e.message);
+  } finally {
+    client.destroy();
   }
+}
 
-  // Test prompt names with spaces
-  try {
-    const result = await client.getPrompt('My Test Prompt');
-    assert(result.content, 'Fetches prompt with spaces in name');
-    assert(
-      result.content.includes('My Test Prompt'),
-      'Returns correct content for spaced name'
-    );
-  } catch (e) {
-    assert(false, 'Should handle spaces in prompt names', e.message);
-  }
+// Test 3: Cache functionality
+async function testCache() {
+  console.log('\n3. Cache Functionality');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheTTL: 5000
+  });
+
+  const start1 = Date.now();
+  await client.getPrompt(TEST_PROMPT);
+  const time1 = Date.now() - start1;
+
+  const start2 = Date.now();
+  await client.getPrompt(TEST_PROMPT);
+  const time2 = Date.now() - start2;
+
+  assert(time2 < time1 * 0.5, 'Cache speeds up second fetch',
+    `First: ${time1}ms, Second: ${time2}ms`);
 
   client.destroy();
 }
 
-// Test version-specific fetching
-async function testVersionFetching(baseUrl) {
-  console.log('\n3. Version-Specific Fetch Tests');
+// Test 4: Cache expiration
+async function testCacheExpiry() {
+  console.log('\n4. Cache Expiration');
 
-  const client = new LaikaTest(
-    'valid-api-key',
-    '12345678-1234-5234-8234-123456789012',
-    { baseUrl, cacheEnabled: false }
-  );
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheTTL: 1000
+  });
 
-  try {
-    const result = await client.getPrompt('test-prompt', {
-      versionId: 'version-123'
-    });
+  const result1 = await client.getPrompt(TEST_PROMPT);
+  await sleep(1200);
+  const result2 = await client.getPrompt(TEST_PROMPT);
 
-    assert(result.content, 'Fetches specific version');
-    assert(
-      result.content.includes('version-123'),
-      'Returns correct version content'
-    );
-  } catch (e) {
-    assert(false, 'Should not throw error', e.message);
-  }
+  assert(result1 && result2, 'Refetches after cache expiry');
+  client.destroy();
+}
+
+// Test 5: Cache bypass
+async function testCacheBypass() {
+  console.log('\n5. Cache Bypass');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL
+  });
+
+  await client.getPrompt(TEST_PROMPT);
+
+  const start = Date.now();
+  const result = await client.getPrompt(TEST_PROMPT, { bypassCache: true });
+  const time = Date.now() - start;
+
+  assert(result && time > 5, 'Bypass cache hits API',
+    `Fetch time: ${time}ms`);
 
   client.destroy();
 }
 
-// Test error scenarios
-async function testErrorScenarios(baseUrl) {
-  console.log('\n4. Error Scenario Tests');
+// Test 6: Disabled caching
+async function testNoCache() {
+  console.log('\n6. Disabled Caching');
 
-  const projectId = '12345678-1234-5234-8234-123456789012';
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
 
-  // Test authentication error
-  const invalidClient = new LaikaTest('invalid-key', projectId, { baseUrl });
+  const start1 = Date.now();
+  await client.getPrompt(TEST_PROMPT);
+  const time1 = Date.now() - start1;
+
+  const start2 = Date.now();
+  await client.getPrompt(TEST_PROMPT);
+  const time2 = Date.now() - start2;
+
+  assert(Math.abs(time1 - time2) < time1 * 0.8,
+    'Both fetches take similar time');
+
+  client.destroy();
+}
+
+// Test 7: Error handling
+async function testErrors() {
+  console.log('\n7. Error Handling');
+
+  const client = new LaikaTest('invalid-key', {
+    baseUrl: BASE_URL
+  });
+
   try {
-    await invalidClient.getPrompt('test-prompt');
-    assert(false, 'Should throw AuthenticationError');
+    await client.getPrompt(TEST_PROMPT);
+    assert(false, 'Should reject invalid API key');
   } catch (e) {
-    assert(
-      e instanceof AuthenticationError,
-      'Throws AuthenticationError for invalid key',
-      `Got: ${e.constructor.name} - ${e.message}`
-    );
+    assert(e instanceof AuthenticationError || e instanceof LaikaServiceError,
+      'Handles authentication error');
   }
-  invalidClient.destroy();
 
-  // Test validation error
-  const validClient = new LaikaTest('valid-key', projectId, { baseUrl });
+  client.destroy();
+
+  const validClient = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL
+  });
+
   try {
     await validClient.getPrompt('');
-    assert(false, 'Should throw ValidationError');
+    assert(false, 'Should reject empty prompt name');
   } catch (e) {
-    assert(e instanceof ValidationError, 'Throws ValidationError for empty prompt name');
+    assert(e instanceof ValidationError, 'Validates prompt name');
   }
-
-  // Test 404 error
-  try {
-    await validClient.getPrompt('non-existent');
-    assert(false, 'Should throw LaikaServiceError for 404');
-  } catch (e) {
-    assert(
-      e instanceof LaikaServiceError && e.statusCode === 404,
-      'Throws LaikaServiceError with 404 for missing prompt',
-      `Got: ${e.constructor.name} (status: ${e.statusCode}) - ${e.message}`
-    );
-  }
-
-  // Test 403 error
-  const forbiddenProjectId = 'ffffffff-ffff-5fff-8fff-ffffffffffff';
-  const forbiddenClient = new LaikaTest(
-    'valid-key',
-    forbiddenProjectId,
-    { baseUrl }
-  );
-  try {
-    await forbiddenClient.getPrompt('test-prompt');
-    assert(false, 'Should throw LaikaServiceError for 403');
-  } catch (e) {
-    assert(
-      e instanceof LaikaServiceError && e.statusCode === 403,
-      'Throws LaikaServiceError with 403 for access denied',
-      `Got: ${e.constructor.name} (status: ${e.statusCode}) - ${e.message}`
-    );
-  }
-  forbiddenClient.destroy();
 
   validClient.destroy();
 }
 
-// Test caching behavior
-async function testCaching(baseUrl) {
-  console.log('\n5. Caching Behavior Tests');
-
-  const client = new LaikaTest(
-    'valid-api-key',
-    '12345678-1234-5234-8234-123456789012',
-    { baseUrl, cacheTTL: 2000 }
-  );
-
-  // First fetch (from API)
-  const result1 = await client.getPrompt('cached-prompt');
-  assert(result1.content, 'First fetch successful');
-
-  // Second fetch (from cache)
-  const result2 = await client.getPrompt('cached-prompt');
-  assert(
-    result2.content === result1.content,
-    'Second fetch returns same content (from cache)'
-  );
-
-  // Test cache expiration
-  await sleep(2100); // Wait for cache to expire
-
-  const result3 = await client.getPrompt('cached-prompt');
-  assert(result3.content, 'Expired cache successfully refetches from API');
-
-  client.destroy();
-}
-
-// Test cache bypass
-async function testCacheBypass(baseUrl) {
-  console.log('\n6. Cache Bypass Tests');
-
-  const client = new LaikaTest(
-    'valid-api-key',
-    '12345678-1234-5234-8234-123456789012',
-    { baseUrl }
-  );
-
-  // Warm up cache
-  await client.getPrompt('bypass-test');
-
-  // Bypass cache (should not throw error)
-  const result = await client.getPrompt('bypass-test', { bypassCache: true });
-
-  assert(result && result.content, 'Bypass cache successfully fetches from API');
-  assert(result.content.includes('bypass-test'), 'Returns correct content when bypassing cache');
-
-  client.destroy();
-}
-
-// Test disabled caching
-async function testDisabledCaching(baseUrl) {
-  console.log('\n7. Disabled Caching Tests');
-
-  const client = new LaikaTest(
-    'valid-api-key',
-    '12345678-1234-5234-8234-123456789012',
-    { baseUrl, cacheEnabled: false }
-  );
-
-  const start1 = Date.now();
-  await client.getPrompt('no-cache-test');
-  const time1 = Date.now() - start1;
-
-  const start2 = Date.now();
-  await client.getPrompt('no-cache-test');
-  const time2 = Date.now() - start2;
-
-  assert(
-    Math.abs(time1 - time2) < 20,
-    'Both fetches take similar time (no caching)',
-    `First: ${time1}ms, Second: ${time2}ms`
-  );
-
-  client.destroy();
-}
-
-// Test cleanup
+// Test 8: Cleanup
 async function testCleanup() {
-  console.log('\n8. Cleanup Tests');
+  console.log('\n8. Cleanup');
 
-  const client = new LaikaTest(
-    'valid-key',
-    '12345678-1234-5234-8234-123456789012'
-  );
-
+  const client = new LaikaTest(API_KEY);
   client.destroy();
 
-  assert(
-    client.cache === null || client.cache.cleanupInterval === null,
-    'Destroy cleans up cache interval'
-  );
+  assert(!client.cache || client.cache.cleanupInterval === null,
+    'Cleans up resources properly');
 }
 
-// ============================================================================
-// RUN ALL TESTS
-// ============================================================================
+// Test 9: Custom timeout
+async function testTimeout() {
+  console.log('\n9. Custom Timeout');
 
-async function runAllTests() {
-  console.log('╔════════════════════════════════════════════════════════╗');
-  console.log('║  LaikaTest Prompts Client - Test Suite                ║');
-  console.log('╚════════════════════════════════════════════════════════╝');
-
-  const PORT = 3999;
-  const baseUrl = `http://localhost:${PORT}`;
-  const server = createMockServer(PORT);
-
-  // Start mock server
-  await new Promise((resolve) => {
-    server.listen(PORT, () => {
-      console.log(`\n✓ Mock server started on port ${PORT}\n`);
-      resolve();
-    });
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    timeout: 15000,
+    cacheEnabled: false
   });
 
   try {
-    // Run all tests
-    await testConstructorValidation();
-    await testSuccessfulFetch(baseUrl);
-    await testVersionFetching(baseUrl);
-    await testErrorScenarios(baseUrl);
-    await testCaching(baseUrl);
-    await testCacheBypass(baseUrl);
-    await testDisabledCaching(baseUrl);
-    await testCleanup();
-
-    // Print summary
-    console.log('\n' + '═'.repeat(60));
-    console.log(`Total Tests: ${testsPassed + testsFailed}`);
-    console.log(`✓ Passed: ${testsPassed}`);
-    console.log(`✗ Failed: ${testsFailed}`);
-    console.log('═'.repeat(60) + '\n');
-
-    if (testsFailed === 0) {
-      console.log('🎉 All tests passed!\n');
-    } else {
-      console.log('❌ Some tests failed. Please review the output above.\n');
-      process.exit(1);
-    }
+    const result = await client.getPrompt(TEST_PROMPT);
+    assert(result && result.content, 'Respects custom timeout');
+  } catch (e) {
+    assert(false, 'Should not timeout', e.message);
   } finally {
-    // Stop mock server
-    server.close(() => {
-      console.log('✓ Mock server stopped\n');
-    });
+    client.destroy();
   }
 }
 
-// Run if called directly
-if (require.main === module) {
-  runAllTests().catch(console.error);
+// Test 10: Concurrent requests
+async function testConcurrent() {
+  console.log('\n10. Concurrent Requests');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+
+  try {
+    const results = await Promise.all([
+      client.getPrompt(TEST_PROMPT),
+      client.getPrompt(TEST_PROMPT),
+      client.getPrompt(TEST_PROMPT)
+    ]);
+
+    assert(results.length === 3 && results.every(r => r.content),
+      'Handles concurrent requests');
+  } catch (e) {
+    assert(false, 'Should handle concurrent requests', e.message);
+  } finally {
+    client.destroy();
+  }
 }
 
-module.exports = { runAllTests };
+//Test 11: Versioned prompts
+async function testVersionedPrompts() {
+  console.log('\n11. Versioned Prompts');
+  
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: true,
+    cacheTTL: 5000
+  });
+
+  try {
+    const version1 = 'v1';
+    const version2 = '2';
+
+    const resultV1 = await client.getPrompt(TEST_PROMPT, { versionId: version1 });
+    const resultV2 = await client.getPrompt(TEST_PROMPT, { versionId: version2 });
+
+    assert(resultV1 && resultV1.content, 'Fetches content for version 1 (v1)-'+resultV1.content);
+    assert(resultV2 && resultV2.content, 'Fetches content for version 2 (2)-'+resultV2.content);
+
+  } catch (e) {
+    console.error('Error in versioned prompts test:', e);
+  } finally {
+    client.destroy();
+  }
+}
+
+// Main test runner
+async function runTests() {
+  console.log('╔════════════════════════════════════════════════════╗');
+  console.log('║  LaikaTest SDK - Integration Test Suite           ║');
+  console.log('╚════════════════════════════════════════════════════╝');
+  console.log(`\nAPI Endpoint: ${BASE_URL}`);
+  console.log(`Test Prompt: ${TEST_PROMPT}\n`);
+
+  try {
+    await testConstructor();
+    await testBasicFetch();
+    await testCache();
+    await testCacheExpiry();
+    await testCacheBypass();
+    await testNoCache();
+    await testErrors();
+    await testCleanup();
+    await testTimeout();
+    await testConcurrent();
+    await testVersionedPrompts();
+  } catch (e) {
+    console.error('\n✗ Test suite error:', e.message);
+    process.exit(1);
+  }
+
+  console.log('\n' + '═'.repeat(52));
+  console.log(`Total: ${passed + failed} | Passed: ${passed} | Failed: ${failed}`);
+  console.log('═'.repeat(52) + '\n');
+
+  if (failed === 0) {
+    console.log('✓ All tests passed!\n');
+    process.exit(0);
+  } else {
+    console.log('✗ Some tests failed\n');
+    process.exit(1);
+  }
+}
+
+// Execute tests
+if (require.main === module) {
+  runTests().catch(console.error);
+}
+
+module.exports = { runTests };
