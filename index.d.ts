@@ -6,10 +6,9 @@ export class LaikaTest {
   /**
    * Creates a new LaikaTest client
    * @param apiKey - Your LaikaTest API key
-   * @param projectId - The project ID containing your resources
    * @param options - Optional configuration
    */
-  constructor(apiKey: string, projectId: string, options?: ClientOptions);
+  constructor(apiKey: string, options?: ClientOptions);
 
   /**
    * Fetch prompt content by name

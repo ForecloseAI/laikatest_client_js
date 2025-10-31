@@ -3,7 +3,7 @@
 
 const { PromptCache } = require('./lib/cache');
 const { fetchPrompt } = require('./lib/prompts');
-const { validateApiKey, validateProjectId, validatePromptName, validateVersionId } = require('./lib/validation');
+const { validateApiKey, validatePromptName, validateVersionId } = require('./lib/validation');
 const {
   LaikaServiceError,
   NetworkError,
@@ -13,13 +13,11 @@ const {
 
 // Main LaikaTest client class
 class LaikaTest {
-  // Initialize client with API key and project ID
-  constructor(apiKey, projectId, options = {}) {
+  // Initialize client with API key 
+  constructor(apiKey, options = {}) {
     validateApiKey(apiKey);
-    validateProjectId(projectId);
 
     this.apiKey = apiKey;
-    this.projectId = projectId;
     this.baseUrl = options.baseUrl || 'https://api.laikatest.com';
     this.timeout = options.timeout || 10000;
 
@@ -32,14 +30,14 @@ class LaikaTest {
   async getPrompt(promptName, options = {}) {
     validatePromptName(promptName);
 
-    const versionId = options.versionId || null;
-    validateVersionId(versionId);
+    const versionId = validateVersionId(options.versionId);
+    
 
     const bypassCache = options.bypassCache || false;
 
     // Check cache first if enabled and not bypassed
     if (this.cacheEnabled && !bypassCache) {
-      const cached = this.cache.get(this.projectId, promptName, versionId);
+      const cached = this.cache.get(promptName, versionId);
       if (cached) {
         return { content: cached };
       }
@@ -49,7 +47,6 @@ class LaikaTest {
     const content = await fetchPrompt(
       this.apiKey,
       this.baseUrl,
-      this.projectId,
       promptName,
       versionId,
       this.timeout
@@ -57,7 +54,7 @@ class LaikaTest {
 
     // Store in cache if enabled
     if (this.cacheEnabled) {
-      this.cache.set(this.projectId, promptName, versionId, content);
+      this.cache.set(promptName, versionId, content);
     }
 
     return { content };
