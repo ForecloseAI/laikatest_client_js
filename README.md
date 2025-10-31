@@ -18,11 +18,11 @@ const client = new LaikaTest('your-api-key-here');
 
 // Fetch a prompt
 const prompt = await client.getPrompt('greeting-prompt');
-console.log(prompt.content);
+console.log(prompt.getContent());
 
 // Compile with variables
 const compiled = prompt.compile({ name: 'Ada' });
-console.log(compiled);
+console.log(compiled.getContent());
 
 // Don't forget to cleanup when done
 client.destroy();
@@ -50,9 +50,9 @@ const client = new LaikaTest(process.env.LAIKATEST_API_KEY);
 
 try {
   const result = await client.getPrompt('welcome-message');
-  console.log('Prompt content:', result.content);
+  console.log('Prompt content:', result.getContent());
   const compiled = result.compile({ name: 'Ada' });
-  console.log('Compiled content:', compiled);
+  console.log('Compiled content:', compiled.getContent());
 } catch (error) {
   console.error('Error fetching prompt:', error.message);
 } finally {
@@ -69,8 +69,9 @@ const result = await client.getPrompt('welcome-message', {
   versionId: '10'  // or 'v10'
 });
 
-console.log('Version content:', result.content);
-console.log('Compiled:', result.compile({ name: 'Ada' }));
+console.log('Version content:', result.getContent());
+const compiled = result.compile({ name: 'Ada' });
+console.log('Compiled:', compiled.getContent());
 ```
 
 ### Bypassing Cache
@@ -213,14 +214,20 @@ Fetches prompt content by name.
 - `NetworkError`: Network issues
 - `LaikaServiceError`: API errors
 
+### `prompt.getContent()`
+
+Returns the content of the prompt.
+
+**Returns:** The prompt content (string, array, or object)
+
 ### `prompt.compile(variables)`
 
-Compiles the fetched prompt by injecting variables into `{{placeholders}}`.
+Compiles the prompt by injecting variables into `{{placeholders}}`.
 
 **Parameters:**
 - `variables` (object): Key/value pairs for placeholder replacement
 
-**Returns:** Compiled prompt content matching the original structure (string, array, or object)
+**Returns:** A new `Prompt` instance with the compiled content. Use `getContent()` to access the compiled result.
 
 ### `client.destroy()`
 
@@ -252,7 +259,7 @@ try {
 ```javascript
 try {
   const prompt = await client.getPrompt('my-prompt');
-  return prompt.content;
+  return prompt.getContent();
 } catch (error) {
   // Log error and provide fallback
   console.error('Failed to fetch prompt:', error);
@@ -289,6 +296,7 @@ import { LaikaTest, Prompt } from '@laikatest/js-client';
 const client = new LaikaTest(apiKey);
 const prompt: Prompt = await client.getPrompt('my-prompt');
 const compiled = prompt.compile({ name: 'Ada' });
+const content = compiled.getContent();
 ```
 
 ## Examples
@@ -303,19 +311,19 @@ const client = new LaikaTest(process.env.LAIKATEST_API_KEY);
 try {
   // Fetch current version
   const prompt = await client.getPrompt('welcome-message');
-  console.log(prompt.content);
+  console.log(prompt.getContent());
 
   // Fetch specific version
   const versioned = await client.getPrompt('welcome-message', {
     versionId: '10'  // or 'v10'
   });
-  console.log(versioned.content);
+  console.log(versioned.getContent());
 
   // Bypass cache
   const fresh = await client.getPrompt('welcome-message', {
     bypassCache: true
   });
-  console.log(fresh.content);
+  console.log(fresh.getContent());
 } catch (error) {
   console.error('Error:', error.message);
 } finally {

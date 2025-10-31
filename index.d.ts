@@ -5,13 +5,13 @@
 export type PromptContent = string | Record<string, unknown> | Array<unknown>;
 
 export class Prompt<C = PromptContent> {
-  readonly content: C;
-
   constructor(content: C);
 
-  compile<T = C>(variables: Record<string, unknown>): T;
+  getContent(): C;
 
-  toJSON(): { content: C };
+  getType(): 'chat' | 'text';
+
+  compile(variables: Record<string, unknown>): Prompt<C>;
 }
 
 export class LaikaTest {

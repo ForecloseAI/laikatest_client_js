@@ -9,7 +9,7 @@ const {
 } = require('./index');
 
 // Test configuration
-const API_KEY = '2947f11ff2a2adba254234d0420f18c52229edaad85473f64837dcfc644d083f';
+const API_KEY = process.env.LAIKATEST_API_KEY || '';
 const BASE_URL = 'https://api.laikatest.com';
 const TEST_PROMPT = 'sample';
 
@@ -60,8 +60,8 @@ async function testBasicFetch() {
 
   try {
     const result = await client.getPrompt(TEST_PROMPT);
-    assert(result && result.get_content(), 'Fetches prompt successfully');
-    assert(typeof result.get_content() === 'string' || Array.isArray(result.get_content()),
+    assert(result && result.getContent(), 'Fetches prompt successfully');
+    assert(typeof result.getContent() === 'string' || Array.isArray(result.getContent()),
       'Returns valid content type');
   } catch (e) {
     assert(false, 'Should fetch without error', e.message);
@@ -208,7 +208,7 @@ async function testTimeout() {
 
   try {
     const result = await client.getPrompt(TEST_PROMPT);
-    assert(result && result.get_content(), 'Respects custom timeout');
+    assert(result && result.getContent(), 'Respects custom timeout');
   } catch (e) {
     assert(false, 'Should not timeout', e.message);
   } finally {
@@ -232,7 +232,7 @@ async function testConcurrent() {
       client.getPrompt(TEST_PROMPT)
     ]);
 
-    assert(results.length === 3 && results.every(r => r.get_content()),
+    assert(results.length === 3 && results.every(r => r.getContent()),
       'Handles concurrent requests');
   } catch (e) {
     assert(false, 'Should handle concurrent requests', e.message);
@@ -258,8 +258,8 @@ async function testVersionedPrompts() {
     const resultV1 = await client.getPrompt(TEST_PROMPT, { versionId: version1 });
     const resultV2 = await client.getPrompt(TEST_PROMPT, { versionId: version2 });
 
-    assert(resultV1 && resultV1.get_content(), 'Fetches content for version 1 (v1)-'+resultV1.get_content());
-    assert(resultV2 && resultV2.get_content(), 'Fetches content for version 2 (2)-'+resultV2.get_content());
+    assert(resultV1 && resultV1.getContent(), 'Fetches content for version 1 (v1)-'+resultV1.getContent());
+    assert(resultV2 && resultV2.getContent(), 'Fetches content for version 2 (2)-'+resultV2.getContent());
 
   } catch (e) {
     console.error('Error in versioned prompts test:', e);
@@ -283,7 +283,7 @@ async function testVariableCompile() {
     var: "World"
   };
   const compiled = promptContent.compile(variables);
-  console.log('Compiled Prompt:', compiled.get_content());
+  console.log('Compiled Prompt:', compiled.getContent());
   assert(compiled, 'Compiles variables into prompt content');
 } catch (e) {
   assert(false, 'Should compile variables without error', e.message);
@@ -308,7 +308,7 @@ async function testChatCompile(){
     var2: "user2"
   };
   const compiled = await promptContent.compile(variables);
-  console.log('Compiled Chat Prompt:', compiled.get_content());
+  console.log('Compiled Chat Prompt:', compiled.getContent());
   assert(compiled, 'Compiles variables into chat prompt content');
 } catch (e) {
   assert(false, 'Should compile chat variables without error', e.message);
