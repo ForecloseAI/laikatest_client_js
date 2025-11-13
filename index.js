@@ -72,7 +72,11 @@ class LaikaTest {
       this.timeout
     );
 
-    return new Prompt(result.promptContent, result.promptMetadata.promptVersionId);
+    return new Prompt(
+      result.promptContent,
+      result.promptMetadata.promptVersionId,
+      result.experimentId,result.bucketId
+    );
   }
 
   // Cleanup resources and cache
