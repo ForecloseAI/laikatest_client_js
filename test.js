@@ -317,6 +317,30 @@ async function testChatCompile(){
 }
 }
 
+async function testExperimentPrompt() {
+  console.log('\n14. Experiment Prompt Fetch');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+
+  try {
+    const context = {
+      user_id: 'test-user',
+      age: 30,
+    };
+
+    const result = await client.getExperimentPrompt('nums', context);
+    assert(result && result.getContent(), 'Fetches experiment prompt successfully');
+    console.log('Experiment Prompt Content:', result.getContent());
+  } catch (e) {
+    assert(false, 'Should fetch experiment prompt without error', e.message);
+  } finally {
+    client.destroy();
+  }
+}
+
 // Main test runner
 async function runTests() {
   console.log('╔════════════════════════════════════════════════════╗');
@@ -339,6 +363,7 @@ async function runTests() {
     await testVersionedPrompts();
     await testVariableCompile();
     await testChatCompile();
+    await testExperimentPrompt();
   } catch (e) {
     console.error('\n✗ Test suite error:', e.message);
     process.exit(1);

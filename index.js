@@ -3,8 +3,9 @@
 
 const { PromptCache } = require('./lib/cache');
 const { fetchPrompt } = require('./lib/prompt_utils');
-const { validateApiKey, validatePromptName, validateVersionId } = require('./lib/validation');
+const { validateApiKey, validatePromptName, validateVersionId, validateExperimentTitle } = require('./lib/validation');
 const { Prompt } = require('./lib/prompt');
+const { evaluateExperiment } = require('./lib/experiment');
 const {
   LaikaServiceError,
   NetworkError,
@@ -59,6 +60,19 @@ class LaikaTest {
     }
 
     return new Prompt(content);
+  }
+
+  async getExperimentPrompt(experimentTitle, context = {}) {
+    validateExperimentTitle(experimentTitle);
+    const result = await evaluateExperiment(
+      this.apiKey,
+      this.baseUrl,
+      experimentTitle,
+      context,
+      this.timeout
+    );
+
+    return new Prompt(result.promptContent, result.promptMetadata.promptVersionId);
   }
 
   // Cleanup resources and cache

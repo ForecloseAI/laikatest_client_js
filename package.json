@@ -1,6 +1,6 @@
 {
   "name": "@laikatest/js-client",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "JavaScript SDK for fetching LaikaTest prompt templates via API",
   "main": "index.js",
   "types": "index.d.ts",

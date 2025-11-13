@@ -84,6 +84,21 @@ const result = await client.getPrompt('welcome-message', {
 });
 ```
 
+### Evaluating Experiments
+
+Use `getExperimentPrompt()` to evaluate an experiment and automatically retrieve the prompt tied to the assigned group:
+
+```javascript
+const experiment = await client.getExperimentPrompt('homepage-layout-test', {
+  user_id: 'abc-123',
+  plan: 'pro'
+});
+
+console.log('Prompt content:', experiment.getContent());
+```
+
+The method returns both the assigned experiment group and a `Prompt` instance, so you can keep using helpers like `compile()` on the experiment result.
+
 ## Configuration Options
 
 You can customize the client behavior with configuration options:
