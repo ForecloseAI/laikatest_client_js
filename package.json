@@ -36,5 +36,8 @@
   "bugs": {
     "url": "https://github.com/ForecloseAI/laikatest_client_js/issues"
   },
-  "homepage": "https://github.com/ForecloseAI/laikatest_client_js#readme"
+  "homepage": "https://github.com/ForecloseAI/laikatest_client_js#readme",
+  "devDependencies": {
+    "dotenv": "^17.2.3"
+  }
 }

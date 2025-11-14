@@ -4,6 +4,38 @@
 
 export type PromptContent = string | Record<string, unknown> | Array<unknown>;
 
+/**
+ * Score types supported by the scoring system
+ */
+export type ScoreType = 'int' | 'bool' | 'string';
+
+/**
+ * Score source (SDK or UI)
+ */
+export type ScoreSource = 'sdk' | 'ui';
+
+/**
+ * Individual score item structure
+ */
+export interface ScoreInput {
+  /** Name of the score metric (e.g., 'rating', 'helpful') */
+  name: string;
+  /** Type of the score value */
+  type: ScoreType;
+  /** The actual score value (must match the type) */
+  value: number | boolean | string;
+}
+
+/**
+ * Response from pushScore method
+ */
+export interface PushScoreResponse {
+  success: boolean;
+  statusCode: number;
+  data?: any;
+  message?: string;
+}
+
 export class Prompt<C = PromptContent> {
   constructor(content: C);
 
@@ -11,7 +43,31 @@ export class Prompt<C = PromptContent> {
 
   getType(): 'chat' | 'text';
 
+  getBucketId(): string | null;
+
+  getExperimentId(): string | null;
+
+  getPromptId(): string | null;
+
+  getPromptVersionId(): string | null;
+
   compile(variables: Record<string, unknown>): Prompt<C>;
+
+  /**
+   * Push score for experimental prompts
+   * @param scores - Array of score items
+   * @param session_id - Session identifier (optional if user_id provided)
+   * @param user_id - User identifier (optional if session_id provided)
+   * @returns Promise resolving to push score response
+   * @throws {Error} If prompt is not from an experiment
+   * @throws {ValidationError} If scores or identifiers are invalid
+   * @throws {NetworkError} If network request fails
+   */
+  pushScore(
+    scores: ScoreInput[],
+    session_id?: string | null,
+    user_id?: string | null
+  ): Promise<PushScoreResponse>;
 }
 
 export class LaikaTest {
@@ -45,6 +101,28 @@ export class LaikaTest {
    * @throws {NetworkError} If network request fails
    */
   getExperimentPrompt<C = PromptContent>(experimentTitle: string, context?: Record<string, unknown>): Promise<Prompt<C>>;
+
+  /**
+   * Push score for experimental prompts (advanced usage)
+   * Note: Most users should use prompt.pushScore() instead
+   * @param exp_id - Experiment ID
+   * @param bucket_id - Bucket ID
+   * @param prompt_id - Prompt ID
+   * @param scores - Array of score items
+   * @param session_id - Session identifier (optional if user_id provided)
+   * @param user_id - User identifier (optional if session_id provided)
+   * @returns Promise resolving to push score response
+   * @throws {ValidationError} If inputs are invalid
+   * @throws {NetworkError} If network request fails
+   */
+  pushScore(
+    exp_id: string,
+    bucket_id: string,
+    prompt_id: string,
+    scores: ScoreInput[],
+    session_id?: string | null,
+    user_id?: string | null
+  ): Promise<PushScoreResponse>;
 
   /**
    * Cleanup resources and stop background processes

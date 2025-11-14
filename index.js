@@ -6,6 +6,7 @@ const { fetchPrompt } = require('./lib/prompt_utils');
 const { validateApiKey, validatePromptName, validateVersionId, validateExperimentTitle } = require('./lib/validation');
 const { Prompt } = require('./lib/prompt');
 const { evaluateExperiment } = require('./lib/experiment');
+const { pushScore: pushScoreUtil } = require('./lib/score_utils');
 const {
   LaikaServiceError,
   NetworkError,
@@ -75,7 +76,25 @@ class LaikaTest {
     return new Prompt(
       result.promptContent,
       result.promptMetadata.promptVersionId,
-      result.experimentId,result.bucketId
+      result.experimentId,
+      result.bucketId,
+      this,  // ← Pass client reference
+      result.promptMetadata.promptId  // ✅ Pass promptId for pushScore
+    );
+  }
+
+  // Push score for experimental prompts
+  async pushScore(exp_id, bucket_id, prompt_id, scores, session_id = null, user_id = null) {
+    return await pushScoreUtil(
+      this.apiKey,
+      this.baseUrl,
+      exp_id,
+      bucket_id,
+      prompt_id,
+      scores,
+      session_id,
+      user_id,
+      this.timeout
     );
   }
 
