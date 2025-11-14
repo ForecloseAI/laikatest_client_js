@@ -328,14 +328,160 @@ async function testExperimentPrompt() {
   try {
     const context = {
       user_id: 'test-user',
-      age: 30,
+      country: "India",
     };
 
-    const result = await client.getExperimentPrompt('nums', context);
+    const result = await client.getExperimentPrompt('test1', context);
     assert(result && result.getContent(), 'Fetches experiment prompt successfully');
     console.log('Experiment Prompt Content:', result.getContent());
   } catch (e) {
     assert(false, 'Should fetch experiment prompt without error', e.message);
+  } finally {
+    client.destroy();
+  }
+}
+
+async function testBucketDistribution() {
+  console.log('\n15. Bucket Distribution Convergence Test');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+
+  try {
+    const bucketCounts = {};
+    const totalRequests = 100;
+
+    console.log(`  Sending ${totalRequests} requests with different user IDs...`);
+
+    for (let i = 0; i < totalRequests; i++) {
+      const context = {
+        user_id: `user-${i}`,
+      };
+
+      const result = await client.getExperimentPrompt('fifty', context);
+      const bucketId = result.getBucketId();
+
+      if (bucketId) {
+        bucketCounts[bucketId] = (bucketCounts[bucketId] || 0) + 1;
+      }
+
+      // Progress indicator
+      const progress = i + 1;
+      const percentage = ((progress / totalRequests) * 100).toFixed(1);
+      process.stdout.write(`\r  Progress: ${progress}/${totalRequests} (${percentage}%)`);
+    }
+    console.log(); // New line after progress completes
+
+    console.log('\n  Bucket Distribution:');
+    const bucketIds = Object.keys(bucketCounts).sort();
+
+    bucketIds.forEach(bucketId => {
+      const count = bucketCounts[bucketId];
+      const percentage = ((count / totalRequests) * 100).toFixed(2);
+      console.log(`    Bucket ${bucketId}: ${count} requests (${percentage}%)`);
+    });
+
+    // Check if we have exactly 2 buckets (for 50-50 split)
+    assert(bucketIds.length === 2, 'Has 2 buckets for A/B test');
+
+    // Calculate the distribution ratio
+    if (bucketIds.length === 2) {
+      const bucket1Count = bucketCounts[bucketIds[0]];
+      const bucket2Count = bucketCounts[bucketIds[1]];
+      const ratio = Math.abs(bucket1Count - bucket2Count) / totalRequests;
+
+      // For 100 requests, allow up to 20% deviation from perfect 50-50
+      // (i.e., 40-60 to 60-40 range is acceptable)
+      const acceptableDeviation = 0.20;
+      assert(ratio <= acceptableDeviation,
+        `Distribution is reasonably close to 50-50 (deviation: ${(ratio * 100).toFixed(2)}%)`,
+        `Expected deviation <= ${acceptableDeviation * 100}%, got ${(ratio * 100).toFixed(2)}%`);
+    }
+
+  } catch (e) {
+    assert(false, 'Should complete bucket distribution test without error', e.message);
+  } finally {
+    client.destroy();
+  }
+}
+
+async function testThreeBucketDistribution() {
+  console.log('\n16. Three Bucket Distribution Test (10-30-60)');
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+
+  try {
+    const bucketCounts = {};
+    const totalRequests = 200;
+
+    console.log(`  Sending ${totalRequests} requests with different user IDs...`);
+
+    for (let i = 0; i < totalRequests; i++) {
+      const context = {
+        user_id: `user-${i}`,
+      };
+
+      const result = await client.getExperimentPrompt('three_bucket', context);
+      const bucketId = result.getBucketId();
+
+      if (bucketId) {
+        bucketCounts[bucketId] = (bucketCounts[bucketId] || 0) + 1;
+      }
+
+      // Progress indicator
+      const progress = i + 1;
+      const percentage = ((progress / totalRequests) * 100).toFixed(1);
+      process.stdout.write(`\r  Progress: ${progress}/${totalRequests} (${percentage}%)`);
+    }
+    console.log(); // New line after progress completes
+
+    console.log('\n  Bucket Distribution:');
+    const bucketIds = Object.keys(bucketCounts).sort();
+
+    bucketIds.forEach(bucketId => {
+      const count = bucketCounts[bucketId];
+      const percentage = ((count / totalRequests) * 100).toFixed(2);
+      console.log(`    Bucket ${bucketId}: ${count} requests (${percentage}%)`);
+    });
+
+    // Check if we have exactly 3 buckets
+    assert(bucketIds.length === 3, 'Has 3 buckets for A/B/C test');
+
+    // Check distribution approximates 10-30-60 ratio
+    if (bucketIds.length === 3) {
+      const sortedCounts = bucketIds.map(id => bucketCounts[id]).sort((a, b) => a - b);
+      const [smallest, middle, largest] = sortedCounts;
+
+      // Expected: 10%, 30%, 60% with reasonable tolerance for 100 requests
+      const smallestPercentage = (smallest / totalRequests) * 100;
+      const middlePercentage = (middle / totalRequests) * 100;
+      const largestPercentage = (largest / totalRequests) * 100;
+
+      console.log(`  Sorted percentages: ${smallestPercentage.toFixed(2)}%, ${middlePercentage.toFixed(2)}%, ${largestPercentage.toFixed(2)}%`);
+
+      // Allow ±10% deviation for each bucket (e.g., 10% ± 10% = 0-20%)
+      const acceptableDeviation = 10;
+      assert(
+        Math.abs(smallestPercentage - 10) <= acceptableDeviation,
+        `Smallest bucket is close to 10% (got ${smallestPercentage.toFixed(2)}%)`
+      );
+      assert(
+        Math.abs(middlePercentage - 30) <= acceptableDeviation,
+        `Middle bucket is close to 30% (got ${middlePercentage.toFixed(2)}%)`
+      );
+      assert(
+        Math.abs(largestPercentage - 60) <= acceptableDeviation,
+        `Largest bucket is close to 60% (got ${largestPercentage.toFixed(2)}%)`
+      );
+    }
+
+  } catch (e) {
+    assert(false, 'Should complete three bucket distribution test without error', e.message);
   } finally {
     client.destroy();
   }
@@ -364,6 +510,8 @@ async function runTests() {
     await testVariableCompile();
     await testChatCompile();
     await testExperimentPrompt();
+    await testBucketDistribution();
+    await testThreeBucketDistribution();
   } catch (e) {
     console.error('\n✗ Test suite error:', e.message);
     process.exit(1);
