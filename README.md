@@ -97,7 +97,48 @@ const experiment = await client.getExperimentPrompt('homepage-layout-test', {
 console.log('Prompt content:', experiment.getContent());
 ```
 
-The method returns both the assigned experiment group and a `Prompt` instance, so you can keep using helpers like `compile()` on the experiment result.
+The method returns both the assigned experiment group and a `Prompt` instance, so you can keep using helpers amlike `compile()` on the experiment result.
+
+### Tracking Experiment Performance with Scores
+
+After using an experimental prompt, you can push performance metrics to analyze A/B test results:
+
+```javascript
+// Get experimental prompt
+const prompt = await client.getExperimentPrompt('my-experiment', {
+  user_id: 'user-123'
+});
+
+// Use the prompt in your application
+const response = await callYourLLM(prompt.getContent());
+
+// Track performance metrics using prompt.pushScore()
+await prompt.pushScore(
+  [
+    { name: 'rating', type: 'int', value: 5 },
+    { name: 'helpful', type: 'bool', value: true },
+    { name: 'feedback', type: 'string', value: 'Great response!' }
+  ],
+  'session-abc-123',  // session_id
+  'user-123'          // user_id (optional if session_id provided)
+);
+```
+
+**How it works:**
+1. `getExperimentPrompt()` returns a prompt with embedded experiment metadata
+2. The prompt stores the experiment ID, bucket ID, and prompt ID internally
+3. When you call `prompt.pushScore()`, it automatically includes this metadata in the API request
+
+**Supported Score Types:**
+- `int` - Numeric values (e.g., ratings, response time)
+- `bool` - Boolean values (e.g., helpful/not helpful, success/failure)
+- `string` - Text values (e.g., user feedback, categories)
+
+**Important Notes:**
+- Only prompts from `getExperimentPrompt()` can be scored
+- Regular prompts from `getPrompt()` will throw an error if you try to score them
+- At least one identifier (`session_id` or `user_id`) is required
+- Each score item must have: `name` (string), `type` ('int'|'bool'|'string'), and `value` (matching the type)
 
 ## Configuration Options
 
@@ -244,6 +285,51 @@ Compiles the prompt by injecting variables into `{{placeholders}}`.
 
 **Returns:** A new `Prompt` instance with the compiled content. Use `getContent()` to access the compiled result.
 
+### `prompt.pushScore(scores, session_id?, user_id?)`
+
+Pushes performance scores for experimental prompts to track A/B test results.
+
+**Parameters:**
+- `scores` (array, required): Array of score objects with the following structure:
+  - `name` (string): Metric name (e.g., 'rating', 'helpful', 'response_quality')
+  - `type` (string): Score type - must be one of: `'int'`, `'bool'`, or `'string'`
+  - `value` (number|boolean|string): The score value - must match the declared type
+- `session_id` (string, optional): Session identifier
+- `user_id` (string, optional): User identifier
+
+**Note:** At least one of `session_id` or `user_id` must be provided.
+
+**Returns:** `Promise<{ success: boolean, statusCode: number, data?: any }>`
+
+**Throws:**
+- `Error`: If the prompt is not from an experiment (must be created via `getExperimentPrompt()`)
+- `Error`: If the client reference is not available
+- `ValidationError`: If scores structure is invalid or identifiers are missing
+- `NetworkError`: If the network request fails
+- `AuthenticationError`: If API authentication fails
+
+**Example:**
+```javascript
+const prompt = await client.getExperimentPrompt('my-test', { user_id: '123' });
+
+// Use the prompt...
+const response = await callLLM(prompt.getContent());
+
+// Track performance
+await prompt.pushScore([
+  { name: 'rating', type: 'int', value: 5 },
+  { name: 'helpful', type: 'bool', value: true },
+  { name: 'comment', type: 'string', value: 'Excellent!' }
+], 'session-456');
+```
+
+**How it works internally:**
+1. Validates that the prompt has experiment metadata (experimentId, bucketId, promptId)
+2. Validates that a client reference is available
+3. Delegates to `client.pushScore()` with the stored metadata
+4. The client enriches the request with API key, base URL, and timeout
+5. Calls the score utility which validates inputs and sends the HTTP request to `/api/v1/scores`
+
 ### `client.destroy()`
 
 Cleanup resources and stop background processes. Always call this when done.
@@ -355,6 +441,53 @@ const client = new LaikaTest(process.env.LAIKATEST_API_KEY, {
   cacheEnabled: true
 });
 ```
+
+### A/B Testing with Score Tracking
+
+Complete example of running an A/B test experiment with score tracking:
+
+```javascript
+const { LaikaTest } = require('@laikatest/js-client');
+
+const client = new LaikaTest(process.env.LAIKATEST_API_KEY);
+
+try {
+  // Get experimental prompt (user is assigned to a variant)
+  const prompt = await client.getExperimentPrompt('welcome-message-test', {
+    user_id: 'user-12345',
+    plan: 'premium'
+  });
+
+  console.log('Assigned to bucket:', prompt.getBucketId());
+
+  // Use the prompt content
+  const content = prompt.getContent();
+  const response = await yourLLMFunction(content);
+
+  // Track how well this variant performed
+  await prompt.pushScore([
+    { name: 'user_rating', type: 'int', value: 5 },
+    { name: 'task_completed', type: 'bool', value: true },
+    { name: 'response_time_ms', type: 'int', value: 342 },
+    { name: 'user_feedback', type: 'string', value: 'Very helpful!' }
+  ],
+  'session-xyz789',  // session_id
+  'user-12345'       // user_id
+  );
+
+  console.log('Score submitted successfully!');
+
+} catch (error) {
+  console.error('Error:', error.message);
+} finally {
+  client.destroy();
+}
+```
+
+**Key Points:**
+- The prompt automatically knows which experiment and variant it belongs to
+- You can track multiple metrics with different types in a single call
+- Both session_id and user_id help correlate scores with user sessions
 
 
 ## Requirements
