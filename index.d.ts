@@ -35,6 +35,18 @@ export class LaikaTest {
   getPrompt<C = PromptContent>(promptName: string, options?: GetPromptOptions): Promise<Prompt<C>>;
 
   /**
+   * Evaluate an experiment and retrieve the assigned prompt
+   * @param experimentTitle - The title of the experiment to evaluate
+   * @param context - Optional contextual data used for experiment bucketing
+   * @returns Promise resolving to experiment assignment details
+   * @throws {ValidationError} If experiment title or context is invalid
+   * @throws {AuthenticationError} If API key is invalid
+   * @throws {LaikaServiceError} If API returns an error
+   * @throws {NetworkError} If network request fails
+   */
+  getExperimentPrompt<C = PromptContent>(experimentTitle: string, context?: Record<string, unknown>): Promise<Prompt<C>>;
+
+  /**
    * Cleanup resources and stop background processes
    */
   destroy(): void;
