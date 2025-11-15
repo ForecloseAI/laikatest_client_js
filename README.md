@@ -126,7 +126,7 @@ await prompt.pushScore(
 
 **How it works:**
 1. `getExperimentPrompt()` returns a prompt with embedded experiment metadata
-2. The prompt stores the experiment ID, bucket ID, and prompt ID internally
+2. The prompt stores the experiment ID, bucket ID, and prompt_version ID internally
 3. When you call `prompt.pushScore()`, it automatically includes this metadata in the API request
 
 **Supported Score Types:**
@@ -324,7 +324,7 @@ await prompt.pushScore([
 ```
 
 **How it works internally:**
-1. Validates that the prompt has experiment metadata (experimentId, bucketId, promptId)
+1. Validates that the prompt has experiment metadata (experimentId, bucketId, prompt_version_Id)
 2. Validates that a client reference is available
 3. Delegates to `client.pushScore()` with the stored metadata
 4. The client enriches the request with API key, base URL, and timeout
