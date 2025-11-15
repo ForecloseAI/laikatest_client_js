@@ -107,7 +107,7 @@ export class LaikaTest {
    * Note: Most users should use prompt.pushScore() instead
    * @param exp_id - Experiment ID
    * @param bucket_id - Bucket ID
-   * @param prompt_id - Prompt ID
+   * @param prompt_version_id - Prompt Version ID
    * @param scores - Array of score items
    * @param session_id - Session identifier (optional if user_id provided)
    * @param user_id - User identifier (optional if session_id provided)
@@ -118,7 +118,7 @@ export class LaikaTest {
   pushScore(
     exp_id: string,
     bucket_id: string,
-    prompt_id: string,
+    prompt_version_id: string,
     scores: ScoreInput[],
     session_id?: string | null,
     user_id?: string | null

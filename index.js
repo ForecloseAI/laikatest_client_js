@@ -84,13 +84,13 @@ class LaikaTest {
   }
 
   // Push score for experimental prompts
-  async pushScore(exp_id, bucket_id, prompt_id, scores, session_id = null, user_id = null) {
+  async pushScore(exp_id, bucket_id, prompt_version_id, scores, session_id = null, user_id = null) {
     return await pushScoreUtil(
       this.apiKey,
       this.baseUrl,
       exp_id,
       bucket_id,
-      prompt_id,
+      prompt_version_id,
       scores,
       session_id,
       user_id,
