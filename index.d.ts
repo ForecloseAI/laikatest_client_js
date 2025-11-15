@@ -10,9 +10,9 @@ export type PromptContent = string | Record<string, unknown> | Array<unknown>;
 export type ScoreType = 'int' | 'bool' | 'string';
 
 /**
- * Score source (SDK or UI)
+ * Score source (user or template)
  */
-export type ScoreSource = 'sdk' | 'ui';
+export type ScoreSource = 'user' | 'template';
 
 /**
  * Individual score item structure
