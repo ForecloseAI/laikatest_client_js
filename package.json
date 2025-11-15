@@ -27,7 +27,7 @@
   "author": "LaikaTest Team",
   "license": "MIT",
   "engines": {
-    "node": ">=12.0.0"
+    "node": ">=14.17.0"
   },
   "repository": {
     "type": "git",
