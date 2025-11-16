@@ -12,7 +12,7 @@ export type ScoreType = 'int' | 'bool' | 'string';
 /**
  * Score source (user or template)
  */
-export type ScoreSource = 'user' | 'template';
+export type ScoreSource = 'sdk' | 'ui';
 
 /**
  * Individual score item structure

@@ -54,7 +54,7 @@ async function testConstructor() {
 
 // Test 2: Basic prompt fetch
 async function testBasicFetch() {
-  console.log('\n2. Basic Prompt Fetch');is
+  console.log('\n2. Basic Prompt Fetch');
 
   const client = new LaikaTest(API_KEY, {
     baseUrl: BASE_URL,
@@ -608,13 +608,9 @@ async function testPromptPushScore() {
   // Regular prompt (no experiment metadata)
   const regularPrompt = new Prompt('Regular content');
 
-  try {
-    await regularPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], { session_id: 'sess_123' });
-    assert(false, 'Should reject pushScore on regular prompt');
-  } catch (e) {
-    assert(e.message.includes('not from an experiment'),
-      'Regular prompt rejects pushScore');
-  }
+  const regularResult = await regularPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], { session_id: 'sess_123' });
+  assert(regularResult.success === false && regularResult.error.includes('not from an experiment'),
+    'Regular prompt rejects pushScore');
 
   // Test Case 1: Empty options object - should fail validation
   try {
