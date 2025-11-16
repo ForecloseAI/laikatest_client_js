@@ -3,7 +3,7 @@
 
 const { PromptCache } = require('./lib/cache');
 const { fetchPrompt } = require('./lib/prompt_utils');
-const { validateApiKey, validatePromptName, validateVersionId, validateExperimentTitle } = require('./lib/validation');
+const { validateApiKey, validatePromptName, validateVersionId, validateExperimentTitle, validateScores, validateSessionOrUserId } = require('./lib/validation');
 const { Prompt } = require('./lib/prompt');
 const { evaluateExperiment } = require('./lib/experiment');
 const { pushScore: pushScoreUtil } = require('./lib/score_utils');
@@ -85,6 +85,10 @@ class LaikaTest {
 
   // Push score for experimental prompts
   async pushScore(exp_id, bucket_id, prompt_version_id, scores, session_id = null, user_id = null) {
+    // Validate user inputs before making API call
+    validateScores(scores);
+    validateSessionOrUserId(session_id, user_id);
+
     return await pushScoreUtil(
       this.apiKey,
       this.baseUrl,

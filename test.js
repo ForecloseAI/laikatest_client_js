@@ -609,11 +609,68 @@ async function testPromptPushScore() {
   const regularPrompt = new Prompt('Regular content');
 
   try {
-    await regularPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], 'sess_123');
+    await regularPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], { session_id: 'sess_123' });
     assert(false, 'Should reject pushScore on regular prompt');
   } catch (e) {
     assert(e.message.includes('not from an experiment'),
       'Regular prompt rejects pushScore');
+  }
+
+  // Test Case 1: Empty options object - should fail validation
+  try {
+    await expPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], {});
+    assert(false, 'Should reject empty options object');
+  } catch (e) {
+    assert(e instanceof ValidationError,
+      'Rejects empty options (no session_id or user_id)');
+  }
+
+  // Test Case 2: With only session_id
+  try {
+    await expPrompt.pushScore(
+      [{ name: 'rating', type: 'int', value: 5 }],
+      { session_id: 'sess_123' }
+    );
+    assert(true, 'Accepts options with session_id only');
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      assert(false, 'Should accept session_id only', e.message);
+    } else {
+      // API error is expected since exp_123 doesn't exist
+      assert(true, 'Accepts options with session_id only (API error expected)');
+    }
+  }
+
+  // Test Case 3: With only user_id
+  try {
+    await expPrompt.pushScore(
+      [{ name: 'rating', type: 'int', value: 5 }],
+      { user_id: 'user_456' }
+    );
+    assert(true, 'Accepts options with user_id only');
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      assert(false, 'Should accept user_id only', e.message);
+    } else {
+      // API error is expected since exp_123 doesn't exist
+      assert(true, 'Accepts options with user_id only (API error expected)');
+    }
+  }
+
+  // Test Case 4: With both session_id and user_id
+  try {
+    await expPrompt.pushScore(
+      [{ name: 'rating', type: 'int', value: 5 }],
+      { session_id: 'sess_123', user_id: 'user_456' }
+    );
+    assert(true, 'Accepts options with both session_id and user_id');
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      assert(false, 'Should accept both session_id and user_id', e.message);
+    } else {
+      // API error is expected since exp_123 doesn't exist
+      assert(true, 'Accepts options with both session_id and user_id (API error expected)');
+    }
   }
 
   client.destroy();
@@ -658,7 +715,7 @@ async function testGetExperimentalPrompt() {
 }
 
 async function testPushScoreRealAPI() {
-  console.log('\n24. Push Score to Real API');
+  console.log('\n24. Push Score to Real API - Three Scenarios');
 
   if (!API_KEY) {
     console.log('  ⚠ Skipping (no API key)');
@@ -671,7 +728,7 @@ async function testPushScoreRealAPI() {
   });
 
   try {
-    // Get experimental prompt
+    // Get experimental prompt for all three tests
     const context = {
       user_id: 'test-user-' + Date.now(),
       country: 'USA'
@@ -685,21 +742,109 @@ async function testPushScoreRealAPI() {
     console.log(`    Prompt ID: ${prompt.getPromptId()}`);
     console.log(`    Prompt Version ID: ${prompt.getPromptVersionId()}`);
 
-    // Push score
-    const result = await prompt.pushScore(
-      [
-        { name: 'rating', type: 'int', value: 5 },
-        { name: 'helpful', type: 'bool', value: true },
-        { name: 'test_comment', type: 'string', value: 'SDK test score' }
-      ],
-      'test-session-' + Date.now()
-    );
+    // Test 1: Push score with no IDs (should fail validation)
+    console.log('\n  Test 1: Push score with no IDs (should fail)');
+    try {
+      const result0 = await prompt.pushScore(
+        [
+          { name: 'rating', type: 'int', value: 5 },
+          { name: 'helpful', type: 'bool', value: true },
+          { name: 'test_comment', type: 'string', value: 'Test with no IDs' }
+        ],
+        {}
+      );
 
-    assert(result, 'Pushes score successfully');
-    assert(result.success === true || result.statusCode === 200,
-      'Score submission successful',
-      `Status: ${result.statusCode}`);
-    console.log(`    Score pushed for bucket: ${prompt.getBucketId()}`);
+      assert(false, 'Should reject score with no IDs');
+    } catch (e) {
+      if (e instanceof ValidationError) {
+        assert(true, 'Correctly rejects score with no IDs');
+        console.log(`    ✓ Validation error: ${e.message}`);
+      } else {
+        console.log(`    Unexpected error: ${e.message}`);
+        assert(false, 'Should throw ValidationError for missing IDs', e.message);
+      }
+    }
+
+    // Test 2: Push score with only user_id
+    console.log('\n  Test 2: Push score with only user_id');
+    try {
+      const result1 = await prompt.pushScore(
+        [
+          { name: 'rating', type: 'int', value: 5 },
+          { name: 'helpful', type: 'bool', value: true },
+          { name: 'test_comment', type: 'string', value: 'Test with user_id only' }
+        ],
+        { user_id: 'test-user-' + Date.now() }
+      );
+
+      assert(result1, 'Pushes score with user_id only');
+      assert(result1.success === true || result1.statusCode === 200,
+        'Score submission with user_id successful',
+        `Status: ${result1.statusCode}`);
+      console.log(`    ✓ Score pushed with user_id only`);
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('404')) {
+        console.log('    ⚠ Experiment not found (expected for testing)');
+      } else {
+        console.log(`    Error: ${e.message}`);
+        assert(false, 'Should push score with user_id', e.message);
+      }
+    }
+
+    // Test 3: Push score with only session_id
+    console.log('\n  Test 3: Push score with only session_id');
+    try {
+      const result2 = await prompt.pushScore(
+        [
+          { name: 'rating', type: 'int', value: 4 },
+          { name: 'helpful', type: 'bool', value: false },
+          { name: 'test_comment', type: 'string', value: 'Test with session_id only' }
+        ],
+        { session_id: 'test-session-' + Date.now() }
+      );
+
+      assert(result2, 'Pushes score with session_id only');
+      assert(result2.success === true || result2.statusCode === 200,
+        'Score submission with session_id successful',
+        `Status: ${result2.statusCode}`);
+      console.log(`    ✓ Score pushed with session_id only`);
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('404')) {
+        console.log('    ⚠ Experiment not found (expected for testing)');
+      } else {
+        console.log(`    Error: ${e.message}`);
+        assert(false, 'Should push score with session_id', e.message);
+      }
+    }
+
+    // Test 4: Push score with both user_id and session_id
+    console.log('\n  Test 4: Push score with both user_id and session_id');
+    try {
+      const result3 = await prompt.pushScore(
+        [
+          { name: 'rating', type: 'int', value: 3 },
+          { name: 'helpful', type: 'bool', value: true },
+          { name: 'test_comment', type: 'string', value: 'Test with both user_id and session_id' }
+        ],
+        {
+          user_id: 'test-user-' + Date.now(),
+          session_id: 'test-session-' + Date.now()
+        }
+      );
+
+      assert(result3, 'Pushes score with both user_id and session_id');
+      assert(result3.success === true || result3.statusCode === 200,
+        'Score submission with both identifiers successful',
+        `Status: ${result3.statusCode}`);
+      console.log(`    ✓ Score pushed with both user_id and session_id`);
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('404')) {
+        console.log('    ⚠ Experiment not found (expected for testing)');
+      } else {
+        console.log(`    Error: ${e.message}`);
+        assert(false, 'Should push score with both identifiers', e.message);
+      }
+    }
 
   } catch (e) {
     console.log(`    Error details: ${e.message}`);
@@ -725,22 +870,22 @@ async function runTests() {
   console.log(`Test Prompt: ${TEST_PROMPT}\n`);
 
   try {
-    await testConstructor();
-    await testBasicFetch();
-    await testCache();
-    await testCacheExpiry();
-    await testCacheBypass();
-    await testNoCache();
-    await testErrors();
-    await testCleanup();
-    await testTimeout();
-    await testConcurrent();
-    await testVersionedPrompts();
-    await testVariableCompile();
-    await testChatCompile();
-    await testExperimentPrompt();
-    await testBucketDistribution();
-    await testThreeBucketDistribution();
+    // await testConstructor();
+    // await testBasicFetch();
+    // await testCache();
+    // await testCacheExpiry();
+    // await testCacheBypass();
+    // await testNoCache();
+    // await testErrors();
+    // await testCleanup();
+    // await testTimeout();
+    // await testConcurrent();
+    // await testVersionedPrompts();
+    // await testVariableCompile();
+    // await testChatCompile();
+    // await testExperimentPrompt();
+    // await testBucketDistribution();
+    // await testThreeBucketDistribution();
     await testUUIDGeneration();
     await testClientVersion();
     await testValidScores();

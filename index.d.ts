@@ -27,6 +27,16 @@ export interface ScoreInput {
 }
 
 /**
+ * Options for pushScore method
+ */
+export interface PushScoreOptions {
+  /** Session identifier (optional if user_id provided) */
+  session_id?: string;
+  /** User identifier (optional if session_id provided) */
+  user_id?: string;
+}
+
+/**
  * Response from pushScore method
  */
 export interface PushScoreResponse {
@@ -56,17 +66,15 @@ export class Prompt<C = PromptContent> {
   /**
    * Push score for experimental prompts
    * @param scores - Array of score items
-   * @param session_id - Session identifier (optional if user_id provided)
-   * @param user_id - User identifier (optional if session_id provided)
+   * @param options - Options object containing session_id and/or user_id (at least one required)
    * @returns Promise resolving to push score response
    * @throws {Error} If prompt is not from an experiment
-   * @throws {ValidationError} If scores or identifiers are invalid
+   * @throws {ValidationError} If scores are invalid or neither session_id nor user_id is provided
    * @throws {NetworkError} If network request fails
    */
   pushScore(
     scores: ScoreInput[],
-    session_id?: string | null,
-    user_id?: string | null
+    options: PushScoreOptions
   ): Promise<PushScoreResponse>;
 }
 
