@@ -84,20 +84,20 @@ class LaikaTest {
   }
 
   // Push score for experimental prompts
-  async pushScore(exp_id, bucket_id, prompt_version_id, scores, session_id = null, user_id = null) {
+  async pushScore(expId, bucketId, promptVersionId, scores, sessionId = null, userId = null) {
     // Validate user inputs before making API call
     validateScores(scores);
-    validateSessionOrUserId(session_id, user_id);
+    validateSessionOrUserId(sessionId, userId);
 
     return await pushScoreUtil(
       this.apiKey,
       this.baseUrl,
-      exp_id,
-      bucket_id,
-      prompt_version_id,
+      expId,
+      bucketId,
+      promptVersionId,
       scores,
-      session_id,
-      user_id,
+      sessionId,
+      userId,
       this.timeout
     );
   }

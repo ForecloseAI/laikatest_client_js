@@ -30,10 +30,10 @@ export interface ScoreInput {
  * Options for pushScore method
  */
 export interface PushScoreOptions {
-  /** Session identifier (optional if user_id provided) */
-  session_id?: string;
-  /** User identifier (optional if session_id provided) */
-  user_id?: string;
+  /** Session identifier (optional if userId provided) */
+  sessionId?: string;
+  /** User identifier (optional if sessionId provided) */
+  userId?: string;
 }
 
 /**
@@ -66,10 +66,10 @@ export class Prompt<C = PromptContent> {
   /**
    * Push score for experimental prompts
    * @param scores - Array of score items
-   * @param options - Options object containing session_id and/or user_id (at least one required)
+   * @param options - Options object containing sessionId and/or userId (at least one required)
    * @returns Promise resolving to push score response
    * @throws {Error} If prompt is not from an experiment
-   * @throws {ValidationError} If scores are invalid or neither session_id nor user_id is provided
+   * @throws {ValidationError} If scores are invalid or neither sessionId nor userId is provided
    * @throws {NetworkError} If network request fails
    */
   pushScore(
@@ -113,23 +113,23 @@ export class LaikaTest {
   /**
    * Push score for experimental prompts (advanced usage)
    * Note: Most users should use prompt.pushScore() instead
-   * @param exp_id - Experiment ID
-   * @param bucket_id - Bucket ID
-   * @param prompt_version_id - Prompt Version ID
+   * @param expId - Experiment ID
+   * @param bucketId - Bucket ID
+   * @param promptVersionId - Prompt Version ID
    * @param scores - Array of score items
-   * @param session_id - Session identifier (optional if user_id provided)
-   * @param user_id - User identifier (optional if session_id provided)
+   * @param sessionId - Session identifier (optional if userId provided)
+   * @param userId - User identifier (optional if sessionId provided)
    * @returns Promise resolving to push score response
    * @throws {ValidationError} If inputs are invalid
    * @throws {NetworkError} If network request fails
    */
   pushScore(
-    exp_id: string,
-    bucket_id: string,
-    prompt_version_id: string,
+    expId: string,
+    bucketId: string,
+    promptVersionId: string,
     scores: ScoreInput[],
-    session_id?: string | null,
-    user_id?: string | null
+    sessionId?: string | null,
+    userId?: string | null
   ): Promise<PushScoreResponse>;
 
   /**
