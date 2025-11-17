@@ -28,14 +28,12 @@ export interface ScoreInput {
 
 /**
  * Options for pushScore method
+ * Must provide either sessionId, userId, or both (at least one required)
  */
-export interface PushScoreOptions {
-  /** Session identifier (optional if userId provided) */
-  sessionId?: string;
-  /** User identifier (optional if sessionId provided) */
-  userId?: string;
-}
-
+export type PushScoreOptions =
+  | { sessionId: string; userId?: never }
+  | { userId: string; sessionId?: never }
+  | { userId: string; sessionId: string };
 /**
  * Response from pushScore method
  */
@@ -117,10 +115,9 @@ export class LaikaTest {
    * @param bucketId - Bucket ID
    * @param promptVersionId - Prompt Version ID
    * @param scores - Array of score items
-   * @param sessionId - Session identifier (optional if userId provided)
-   * @param userId - User identifier (optional if sessionId provided)
+   * @param options - Options object containing sessionId and/or userId (at least one required)
    * @returns Promise resolving to push score response
-   * @throws {ValidationError} If inputs are invalid
+   * @throws {ValidationError} If inputs are invalid or neither sessionId nor userId is provided
    * @throws {NetworkError} If network request fails
    */
   pushScore(
@@ -128,8 +125,7 @@ export class LaikaTest {
     bucketId: string,
     promptVersionId: string,
     scores: ScoreInput[],
-    sessionId?: string | null,
-    userId?: string | null
+    options: PushScoreOptions
   ): Promise<PushScoreResponse>;
 
   /**

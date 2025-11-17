@@ -47,13 +47,7 @@ class LaikaTest {
     }
 
     // Fetch from API
-    const content = await fetchPrompt(
-      this.apiKey,
-      this.baseUrl,
-      promptName,
-      versionId,
-      this.timeout
-    );
+    const content = await fetchPrompt(this.apiKey, this.baseUrl, promptName, versionId, this.timeout);
 
     // Store in cache if enabled
     if (this.cacheEnabled) {
@@ -65,41 +59,19 @@ class LaikaTest {
 
   async getExperimentPrompt(experimentTitle, context = {}) {
     validateExperimentTitle(experimentTitle);
-    const result = await evaluateExperiment(
-      this.apiKey,
-      this.baseUrl,
-      experimentTitle,
-      context,
-      this.timeout
-    );
+    const result = await evaluateExperiment(this.apiKey, this.baseUrl, experimentTitle, context, this.timeout);
 
-    return new Prompt(
-      result.promptContent,
-      result.promptMetadata.promptVersionId,
-      result.experimentId,
-      result.bucketId,
-      this,  // ← Pass client reference
-      result.promptMetadata.promptId  // ✅ Pass promptId for pushScore
-    );
+    return new Prompt(result.promptContent, result.promptMetadata.promptVersionId, result.experimentId, result.bucketId, this, result.promptMetadata.promptId);
   }
 
   // Push score for experimental prompts
-  async pushScore(expId, bucketId, promptVersionId, scores, sessionId = null, userId = null) {
+  async pushScore(expId, bucketId, promptVersionId, scores, options = {}) {
     // Validate user inputs before making API call
     validateScores(scores);
-    validateSessionOrUserId(sessionId, userId);
+    validateSessionOrUserId(options);
 
-    return await pushScoreUtil(
-      this.apiKey,
-      this.baseUrl,
-      expId,
-      bucketId,
-      promptVersionId,
-      scores,
-      sessionId,
-      userId,
-      this.timeout
-    );
+    const { sessionId, userId } = options;
+    return await pushScoreUtil(this.apiKey, this.baseUrl, expId, bucketId, promptVersionId, scores, sessionId, userId, this.timeout);
   }
 
   // Cleanup resources and cache
