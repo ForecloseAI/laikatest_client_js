@@ -684,22 +684,22 @@ async function runTests() {
   console.log(`Test Prompt: ${TEST_PROMPT}\n`);
 
   try {
-    // await testConstructor();
-    // await testBasicFetch();
-    // await testCache();
-    // await testCacheExpiry();
-    // await testCacheBypass();
-    // await testNoCache();
-    // await testErrors();
-    // await testCleanup();
-    // await testTimeout();
-    // await testConcurrent();
-    // await testVersionedPrompts();
-    // await testVariableCompile();
-    // await testChatCompile();
-    // await testExperimentPrompt();
-    // await testBucketDistribution();
-    // await testThreeBucketDistribution();
+    await testConstructor();
+    await testBasicFetch();
+    await testCache();
+    await testCacheExpiry();
+    await testCacheBypass();
+    await testNoCache();
+    await testErrors();
+    await testCleanup();
+    await testTimeout();
+    await testConcurrent();
+    await testVersionedPrompts();
+    await testVariableCompile();
+    await testChatCompile();
+    await testExperimentPrompt();
+    await testBucketDistribution();
+    await testThreeBucketDistribution();
     await testInvalidScores();
     await testPushScoreRealAPI();
   } catch (e) {
