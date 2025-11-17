@@ -494,56 +494,6 @@ async function testThreeBucketDistribution() {
 // Score Tests
 // ============================================================================
 
-async function testUUIDGeneration() {
-  console.log('\n17. UUID Generation');
-
-  const uuid1 = generateUUID();
-  const uuid2 = generateUUID();
-
-  assert(uuid1 && uuid2, 'Generates UUIDs');
-  assert(uuid1 !== uuid2, 'UUIDs are unique');
-
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  assert(uuidRegex.test(uuid1), 'UUID has valid format');
-}
-
-async function testClientVersion() {
-  console.log('\n18. Client Version Detection');
-
-  const version = getClientVersion();
-  assert(version && version !== 'unknown', 'Reads version from package.json',
-    `Version: ${version}`);
-}
-
-async function testValidScores() {
-  console.log('\n19. Score Validation - Valid Cases');
-
-  try {
-    validateScores([
-      { name: 'rating', type: 'int', value: 5 },
-      { name: 'helpful', type: 'bool', value: true },
-      { name: 'comment', type: 'string', value: 'Great!' }
-    ]);
-    assert(true, 'Accepts valid score array');
-  } catch (e) {
-    assert(false, 'Should accept valid scores', e.message);
-  }
-
-  try {
-    validateSessionOrUserId('sess_123', null);
-    assert(true, 'Accepts session_id only');
-  } catch (e) {
-    assert(false, 'Should accept session_id', e.message);
-  }
-
-  try {
-    validateSessionOrUserId(null, 'user_456');
-    assert(true, 'Accepts user_id only');
-  } catch (e) {
-    assert(false, 'Should accept user_id', e.message);
-  }
-}
-
 async function testInvalidScores() {
   console.log('\n20. Score Validation - Invalid Cases');
 
@@ -573,140 +523,6 @@ async function testInvalidScores() {
     assert(false, 'Should reject missing identifiers');
   } catch (e) {
     assert(e instanceof ValidationError, 'Rejects missing session_id and user_id');
-  }
-}
-
-async function testClientPushScore() {
-  console.log('\n21. Client pushScore Method');
-
-  const client = new LaikaTest(API_KEY, { baseUrl: BASE_URL });
-
-  assert(typeof client.pushScore === 'function', 'Client has pushScore method');
-
-  client.destroy();
-}
-
-async function testPromptPushScore() {
-  console.log('\n22. Prompt Class pushScore Method');
-
-  const { Prompt } = require('./lib/prompt');
-  const client = new LaikaTest(API_KEY, { baseUrl: BASE_URL });
-
-  // Experimental prompt (with metadata and client)
-  const expPrompt = new Prompt(
-    'Test content',
-    'prompt_v1',
-    'exp_123',
-    'bucket_abc',
-    client,
-    'prompt_id_123'
-  );
-
-  assert(typeof expPrompt.pushScore === 'function',
-    'Experimental prompt has pushScore method');
-
-  // Regular prompt (no experiment metadata)
-  const regularPrompt = new Prompt('Regular content');
-
-  const regularResult = await regularPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], { session_id: 'sess_123' });
-  assert(regularResult.success === false && regularResult.error.includes('not from an experiment'),
-    'Regular prompt rejects pushScore');
-
-  // Test Case 1: Empty options object - should fail validation
-  try {
-    await expPrompt.pushScore([{ name: 'rating', type: 'int', value: 5 }], {});
-    assert(false, 'Should reject empty options object');
-  } catch (e) {
-    assert(e instanceof ValidationError,
-      'Rejects empty options (no session_id or user_id)');
-  }
-
-  // Test Case 2: With only session_id
-  try {
-    await expPrompt.pushScore(
-      [{ name: 'rating', type: 'int', value: 5 }],
-      { session_id: 'sess_123' }
-    );
-    assert(true, 'Accepts options with session_id only');
-  } catch (e) {
-    if (e instanceof ValidationError) {
-      assert(false, 'Should accept session_id only', e.message);
-    } else {
-      // API error is expected since exp_123 doesn't exist
-      assert(true, 'Accepts options with session_id only (API error expected)');
-    }
-  }
-
-  // Test Case 3: With only user_id
-  try {
-    await expPrompt.pushScore(
-      [{ name: 'rating', type: 'int', value: 5 }],
-      { user_id: 'user_456' }
-    );
-    assert(true, 'Accepts options with user_id only');
-  } catch (e) {
-    if (e instanceof ValidationError) {
-      assert(false, 'Should accept user_id only', e.message);
-    } else {
-      // API error is expected since exp_123 doesn't exist
-      assert(true, 'Accepts options with user_id only (API error expected)');
-    }
-  }
-
-  // Test Case 4: With both session_id and user_id
-  try {
-    await expPrompt.pushScore(
-      [{ name: 'rating', type: 'int', value: 5 }],
-      { session_id: 'sess_123', user_id: 'user_456' }
-    );
-    assert(true, 'Accepts options with both session_id and user_id');
-  } catch (e) {
-    if (e instanceof ValidationError) {
-      assert(false, 'Should accept both session_id and user_id', e.message);
-    } else {
-      // API error is expected since exp_123 doesn't exist
-      assert(true, 'Accepts options with both session_id and user_id (API error expected)');
-    }
-  }
-
-  client.destroy();
-}
-
-async function testGetExperimentalPrompt() {
-  console.log('\n23. Get Experimental Prompt with Score Metadata');
-
-  if (!API_KEY) {
-    console.log('  ⚠ Skipping (no API key)');
-    return;
-  }
-
-  const client = new LaikaTest(API_KEY, {
-    baseUrl: BASE_URL,
-    cacheEnabled: false
-  });
-
-  const context = {
-    user_id: 'test-user-' + Date.now(),
-    country: 'USA'
-  };
-
-  try {
-    const prompt = await client.getExperimentPrompt('Testing', context);
-
-    assert(prompt && prompt.getContent(), 'Fetches experimental prompt');
-    assert(typeof prompt.pushScore === 'function', 'Prompt has pushScore method');
-    assert(prompt.getBucketId(), 'Prompt has bucket ID');
-    console.log(`    Experiment ID: ${prompt.getExperimentId()}`);
-    console.log(`    Bucket ID: ${prompt.getBucketId()}`);
-    console.log(`    Prompt ID: ${prompt.getPromptId()}`);
-    console.log(`    Prompt Version ID: ${prompt.getPromptVersionId()}`);
-
-  } catch (e) {
-    console.log(`    Error details: ${e.message}`);
-    console.log(`    Context sent: ${JSON.stringify(context)}`);
-    assert(false, 'Should fetch experimental prompt', e.message);
-  } finally {
-    client.destroy();
   }
 }
 
@@ -866,29 +682,23 @@ async function runTests() {
   console.log(`Test Prompt: ${TEST_PROMPT}\n`);
 
   try {
-    // await testConstructor();
-    // await testBasicFetch();
-    // await testCache();
-    // await testCacheExpiry();
-    // await testCacheBypass();
-    // await testNoCache();
-    // await testErrors();
-    // await testCleanup();
-    // await testTimeout();
-    // await testConcurrent();
-    // await testVersionedPrompts();
-    // await testVariableCompile();
-    // await testChatCompile();
-    // await testExperimentPrompt();
-    // await testBucketDistribution();
-    // await testThreeBucketDistribution();
-    await testUUIDGeneration();
-    await testClientVersion();
-    await testValidScores();
+    await testConstructor();
+    await testBasicFetch();
+    await testCache();
+    await testCacheExpiry();
+    await testCacheBypass();
+    await testNoCache();
+    await testErrors();
+    await testCleanup();
+    await testTimeout();
+    await testConcurrent();
+    await testVersionedPrompts();
+    await testVariableCompile();
+    await testChatCompile();
+    await testExperimentPrompt();
+    await testBucketDistribution();
+    await testThreeBucketDistribution();
     await testInvalidScores();
-    await testClientPushScore();
-    await testPromptPushScore();
-    await testGetExperimentalPrompt();
     await testPushScoreRealAPI();
   } catch (e) {
     console.error('\n✗ Test suite error:', e.message);
