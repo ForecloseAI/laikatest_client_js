@@ -113,7 +113,7 @@ const prompt = await client.getExperimentPrompt('my-experiment', {
 const response = await callYourLLM(prompt.getContent());
 
 // Track performance metrics using prompt.pushScore()
-await prompt.pushScore(
+const result = await prompt.pushScore(
   [
     { name: 'rating', type: 'int', value: 5 },
     { name: 'helpful', type: 'bool', value: true },
@@ -124,6 +124,11 @@ await prompt.pushScore(
     userId: 'user-123'
   }
 );
+
+// Check if score was submitted successfully
+if (!result.success) {
+  console.warn('Score submission failed:', result.error);
+}
 ```
 
 **How it works:**
@@ -302,14 +307,20 @@ Pushes performance scores for experimental prompts to track A/B test results.
 
 **Note:** At least one of `sessionId` or `userId` must be provided.
 
-**Returns:** `Promise<{ success: boolean, statusCode: number, data?: any }>`
+**Returns:** `Promise<PushScoreResponse>`
+
+Response object structure:
+- On success: `{ success: true, statusCode: 200 | 201, data: any }`
+- On network failure: `{ success: false, error: string, errorType: 'NetworkError', details: string }`
 
 **Throws:**
 - `Error`: If the prompt is not from an experiment (must be created via `getExperimentPrompt()`)
 - `Error`: If the client reference is not available
 - `ValidationError`: If scores structure is invalid or identifiers are missing
-- `NetworkError`: If the network request fails
 - `AuthenticationError`: If API authentication fails
+- `LaikaServiceError`: If the API returns an error response (4xx, 5xx status codes)
+
+**Note:** Network failures (connection timeout, DNS errors, etc.) do NOT throw an exception. Instead, the promise resolves with `{ success: false, errorType: 'NetworkError', ... }`. This allows your application to continue gracefully without crashing.
 
 **Example:**
 ```javascript
@@ -471,7 +482,7 @@ try {
   const response = await yourLLMFunction(content);
 
   // Track how well this variant performed
-  await prompt.pushScore(
+  const scoreResult = await prompt.pushScore(
     [
       { name: 'userRating', type: 'int', value: 5 },
       { name: 'taskCompleted', type: 'bool', value: true },
@@ -484,7 +495,12 @@ try {
     }
   );
 
-  console.log('Score submitted successfully!');
+  if (scoreResult.success) {
+    console.log('Score submitted successfully!');
+  } else {
+    console.error('Failed to submit score:', scoreResult.error);
+    // Your app continues running even if score submission fails
+  }
 
 } catch (error) {
   console.error('Error:', error.message);

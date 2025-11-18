@@ -639,6 +639,71 @@ async function testPushScoreRealAPI() {
   }
 }
 
+// Test 25: Network Failure Handling
+async function testNetworkFailure() {
+  console.log('\n25. Push Score - Network Failure Handling');
+
+  try {
+    // First, get a valid experimental prompt from the real API
+    const validClient = new LaikaTest(API_KEY, {
+      baseUrl: BASE_URL
+    });
+
+    const prompt = await validClient.getExperimentPrompt('Testing', {
+      userId: 'network-test-user-' + Date.now()
+    });
+
+    console.log('  ✓ Got experimental prompt from real API');
+    console.log(`    Experiment ID: ${prompt.getExperimentId()}`);
+    console.log(`    Bucket ID: ${prompt.getBucketId()}`);
+
+    validClient.destroy();
+
+    // Now create a client pointing to a non-existent server
+    const offlineClient = new LaikaTest(API_KEY, {
+      baseUrl: 'http://localhost:9999', // Non-existent server
+      timeout: 3000 // 3 second timeout
+    });
+
+    console.log('  ✓ Created client with invalid baseUrl (http://localhost:9999)');
+    console.log('  ⏳ Attempting to push score (this will take ~3 seconds to timeout)...');
+
+    // Try to push score - should return {success: false} instead of throwing
+    const result = await offlineClient.pushScore(
+      prompt.getExperimentId(),
+      prompt.getBucketId(),
+      prompt.getPromptVersionId(),
+      [
+        { name: 'rating', type: 'int', value: 5 },
+        { name: 'feedback', type: 'string', value: 'Test network failure' }
+      ],
+      { userId: 'network-test-user-' + Date.now() }
+    );
+
+    // Verify the result
+    if (!result.success && result.errorType === 'NetworkError') {
+      assert(true, 'Network failure handled gracefully (did not throw exception)');
+      assert(result.errorType === 'NetworkError', `Response has errorType: '${result.errorType}'`);
+      assert(result.error !== undefined, `Error message present: '${result.error}'`);
+      assert(result.details !== undefined, `Error details present: '${result.details}'`);
+      console.log('    ✓ App continued running without crash');
+    } else {
+      console.log('  ✗ Unexpected result structure');
+      console.log(`    Expected: { success: false, errorType: 'NetworkError', ... }`);
+      console.log(`    Got:`, result);
+      assert(false, 'Should return {success: false, errorType: "NetworkError"}');
+    }
+
+    offlineClient.destroy();
+
+  } catch (error) {
+    console.log('  ✗ FAILED - Network error was thrown instead of returned as {success: false}');
+    console.log(`    Error thrown: ${error.name}: ${error.message}`);
+    console.log('    This breaks the documented behavior!');
+    assert(false, 'Should not throw exception on network failure');
+  }
+}
+
 // Main test runner
 async function runTests() {
   console.log('╔════════════════════════════════════════════════════╗');
@@ -666,6 +731,7 @@ async function runTests() {
     await testThreeBucketDistribution();
     await testInvalidScores();
     await testPushScoreRealAPI();
+    await testNetworkFailure();
   } catch (e) {
     console.error('\n✗ Test suite error:', e.message);
     process.exit(1);

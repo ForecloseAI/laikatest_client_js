@@ -36,12 +36,16 @@ export type PushScoreOptions =
   | { userId: string; sessionId: string };
 /**
  * Response from pushScore method
+ * Success case: { success: true, statusCode: 200 | 201, data: any }
+ * Network failure case: { success: false, error: string, errorType: 'NetworkError', details: string }
  */
 export interface PushScoreResponse {
   success: boolean;
-  statusCode: number;
+  statusCode?: number;
   data?: any;
-  message?: string;
+  error?: string;
+  errorType?: 'NetworkError';
+  details?: string;
 }
 
 export class Prompt<C = PromptContent> {
@@ -65,10 +69,12 @@ export class Prompt<C = PromptContent> {
    * Push score for experimental prompts
    * @param scores - Array of score items
    * @param options - Options object containing sessionId and/or userId (at least one required)
-   * @returns Promise resolving to push score response
+   * @returns Promise resolving to push score response. On success: { success: true, statusCode, data }. On network failure: { success: false, errorType: 'NetworkError', error, details }
    * @throws {Error} If prompt is not from an experiment
    * @throws {ValidationError} If scores are invalid or neither sessionId nor userId is provided
-   * @throws {NetworkError} If network request fails
+   * @throws {AuthenticationError} If API authentication fails
+   * @throws {LaikaServiceError} If the API returns an error response (4xx, 5xx status codes)
+   * @note Network failures (timeout, DNS errors, connection issues) do NOT throw - they resolve with { success: false, errorType: 'NetworkError' }
    */
   pushScore(
     scores: ScoreInput[],
@@ -116,9 +122,11 @@ export class LaikaTest {
    * @param promptVersionId - Prompt Version ID
    * @param scores - Array of score items
    * @param options - Options object containing sessionId and/or userId (at least one required)
-   * @returns Promise resolving to push score response
+   * @returns Promise resolving to push score response. On success: { success: true, statusCode, data }. On network failure: { success: false, errorType: 'NetworkError', error, details }
    * @throws {ValidationError} If inputs are invalid or neither sessionId nor userId is provided
-   * @throws {NetworkError} If network request fails
+   * @throws {AuthenticationError} If API authentication fails
+   * @throws {LaikaServiceError} If the API returns an error response (4xx, 5xx status codes)
+   * @note Network failures (timeout, DNS errors, connection issues) do NOT throw - they resolve with { success: false, errorType: 'NetworkError' }
    */
   pushScore(
     expId: string,
