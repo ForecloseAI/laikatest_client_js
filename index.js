@@ -71,7 +71,7 @@ class LaikaTest {
     validateSessionOrUserId(options);
 
     const { sessionId, userId } = options;
-    return await pushScoreUtil(this.apiKey, this.baseUrl, expId, bucketId, promptVersionId, scores, sessionId, userId, this.timeout);
+    return await pushScoreUtil(this.apiKey, this.baseUrl, expId, bucketId, promptVersionId, scores, options);
   }
 
   // Cleanup resources and cache
