@@ -14,7 +14,7 @@ const { generateUUID, getClientVersion } = require('./lib/score_utils');
 // Test configuration
 const API_KEY = process.env.LAIKATEST_API_KEY || '';
 const BASE_URL = process.env.LAIKATEST_BASE_URL || 'https://api.laikatest.com';
-const TEST_PROMPT = 'sample';
+const TEST_PROMPT = 'Testing';
 
 let passed = 0;
 let failed = 0;
@@ -261,6 +261,7 @@ async function testVersionedPrompts() {
     const resultV1 = await client.getPrompt(TEST_PROMPT, { versionId: version1 });
     const resultV2 = await client.getPrompt(TEST_PROMPT, { versionId: version2 });
 
+    assert(resultV1.getContent() !==resultV2.getContent(),'two versions shouldnt be equal');
     assert(resultV1 && resultV1.getContent(), 'Fetches content for version 1 (v1)-'+resultV1.getContent());
     assert(resultV2 && resultV2.getContent(), 'Fetches content for version 2 (2)-'+resultV2.getContent());
 
@@ -280,10 +281,10 @@ async function testVariableCompile() {
   });
   try {
 
-  const promptContent = await client.getPrompt('varTest');
+  const promptContent = await client.getPrompt('Testing');
 
   const variables = {
-    var: "World"
+    name:"Aryan"
   };
   const compiled = promptContent.compile(variables);
   console.log('Compiled Prompt:', compiled.getContent());
@@ -305,12 +306,12 @@ async function testChatCompile(){
   try {
 
   const promptContent = await client.getPrompt('varChat');
-  
+
   const variables = {
-    var1: "user1",
-    var2: "user2"
+    subject: "Mathematics",
+    time: "10"
   };
-  const compiled = await promptContent.compile(variables);
+  const compiled = promptContent.compile(variables);
   console.log('Compiled Chat Prompt:', compiled.getContent());
   assert(compiled, 'Compiles variables into chat prompt content');
 } catch (e) {
@@ -334,7 +335,7 @@ async function testExperimentPrompt() {
       country: "India",
     };
 
-    const result = await client.getExperimentPrompt('test1', context);
+    const result = await client.getExperimentPrompt('test', context);
     assert(result && result.getContent(), 'Fetches experiment prompt successfully');
     console.log('Experiment Prompt Content:', result.getContent());
   } catch (e) {
@@ -361,9 +362,10 @@ async function testBucketDistribution() {
     for (let i = 0; i < totalRequests; i++) {
       const context = {
         userId: `user-${i}`,
+        country: "India"
       };
 
-      const result = await client.getExperimentPrompt('fifty', context);
+      const result = await client.getExperimentPrompt('test', context);
       const bucketId = result.getBucketId();
 
       if (bucketId) {
@@ -411,7 +413,7 @@ async function testBucketDistribution() {
 }
 
 async function testThreeBucketDistribution() {
-  console.log('\n16. Three Bucket Distribution Test (10-30-60)');
+  console.log('\n17. Three Bucket Distribution Test (10-30-60)');
 
   const client = new LaikaTest(API_KEY, {
     baseUrl: BASE_URL,
@@ -427,6 +429,7 @@ async function testThreeBucketDistribution() {
     for (let i = 0; i < totalRequests; i++) {
       const context = {
         userId: `user-${i}`,
+        country: "India"
       };
 
       const result = await client.getExperimentPrompt('threeBucket', context);
@@ -486,7 +489,7 @@ async function testThreeBucketDistribution() {
 // ============================================================================
 
 async function testInvalidScores() {
-  console.log('\n20. Score Validation - Invalid Cases');
+  console.log('\n18. Score Validation - Invalid Cases');
 
   try {
     validateScores([]);
@@ -525,7 +528,7 @@ async function testInvalidScores() {
 }
 
 async function testPushScoreRealAPI() {
-  console.log('\n24. Push Score to Real API - Four Scenarios');
+  console.log('\n19. Push Score to Real API - Four Scenarios');
 
   if (!API_KEY) {
     console.log('  ⚠ Skipping (no API key)');
@@ -541,7 +544,7 @@ async function testPushScoreRealAPI() {
     // Get experimental prompt for all three tests
     const context = {
       userId: 'test-user-' + Date.now(),
-      country: 'USA'
+      age: 20
     };
 
     const prompt = await client.getExperimentPrompt('Testing', context);
@@ -639,9 +642,9 @@ async function testPushScoreRealAPI() {
   }
 }
 
-// Test 25: Network Failure Handling
+// Test 20: Network Failure Handling
 async function testNetworkFailure() {
-  console.log('\n25. Push Score - Network Failure Handling');
+  console.log('\n20. Push Score - Network Failure Handling');
 
   try {
     // First, get a valid experimental prompt from the real API
@@ -650,7 +653,8 @@ async function testNetworkFailure() {
     });
 
     const prompt = await validClient.getExperimentPrompt('Testing', {
-      userId: 'network-test-user-' + Date.now()
+      userId: 'network-test-user-' + Date.now(),
+      age: 20
     });
 
     console.log('  ✓ Got experimental prompt from real API');
