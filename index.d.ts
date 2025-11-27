@@ -4,6 +4,50 @@
 
 export type PromptContent = string | Record<string, unknown> | Array<unknown>;
 
+/**
+ * Score types supported by the scoring system
+ */
+export type ScoreType = 'int' | 'bool' | 'string';
+
+/**
+ * Score source (user or template)
+ */
+export type ScoreSource = 'sdk' | 'ui';
+
+/**
+ * Individual score item structure
+ */
+export interface ScoreInput {
+  /** Name of the score metric (e.g., 'rating', 'helpful') */
+  name: string;
+  /** Type of the score value */
+  type: ScoreType;
+  /** The actual score value (must match the type) */
+  value: number | boolean | string;
+}
+
+/**
+ * Options for pushScore method
+ * Must provide either sessionId, userId, or both (at least one required)
+ */
+export type PushScoreOptions =
+  | { sessionId: string; userId?: never }
+  | { userId: string; sessionId?: never }
+  | { userId: string; sessionId: string };
+/**
+ * Response from pushScore method
+ * Success case: { success: true, statusCode: 200 | 201, data: any }
+ * Network failure case: { success: false, error: string, errorType: 'NetworkError', details: string }
+ */
+export interface PushScoreResponse {
+  success: boolean;
+  statusCode?: number;
+  data?: any;
+  error?: string;
+  errorType?: 'NetworkError';
+  details?: string;
+}
+
 export class Prompt<C = PromptContent> {
   constructor(content: C);
 
@@ -11,7 +55,31 @@ export class Prompt<C = PromptContent> {
 
   getType(): 'chat' | 'text';
 
+  getBucketId(): string | null;
+
+  getExperimentId(): string | null;
+
+  getPromptId(): string | null;
+
+  getPromptVersionId(): string | null;
+
   compile(variables: Record<string, unknown>): Prompt<C>;
+
+  /**
+   * Push score for experimental prompts
+   * @param scores - Array of score items
+   * @param options - Options object containing sessionId and/or userId (at least one required)
+   * @returns Promise resolving to push score response. On success: { success: true, statusCode, data }. On network failure: { success: false, errorType: 'NetworkError', error, details }
+   * @throws {Error} If prompt is not from an experiment
+   * @throws {ValidationError} If scores are invalid or neither sessionId nor userId is provided
+   * @throws {AuthenticationError} If API authentication fails
+   * @throws {LaikaServiceError} If the API returns an error response (4xx, 5xx status codes)
+   * @note Network failures (timeout, DNS errors, connection issues) do NOT throw - they resolve with { success: false, errorType: 'NetworkError' }
+   */
+  pushScore(
+    scores: ScoreInput[],
+    options: PushScoreOptions
+  ): Promise<PushScoreResponse>;
 }
 
 export class LaikaTest {
@@ -45,6 +113,28 @@ export class LaikaTest {
    * @throws {NetworkError} If network request fails
    */
   getExperimentPrompt<C = PromptContent>(experimentTitle: string, context?: Record<string, unknown>): Promise<Prompt<C>>;
+
+  /**
+   * Push score for experimental prompts (advanced usage)
+   * Note: Most users should use prompt.pushScore() instead
+   * @param expId - Experiment ID
+   * @param bucketId - Bucket ID
+   * @param promptVersionId - Prompt Version ID
+   * @param scores - Array of score items
+   * @param options - Options object containing sessionId and/or userId (at least one required)
+   * @returns Promise resolving to push score response. On success: { success: true, statusCode, data }. On network failure: { success: false, errorType: 'NetworkError', error, details }
+   * @throws {ValidationError} If inputs are invalid or neither sessionId nor userId is provided
+   * @throws {AuthenticationError} If API authentication fails
+   * @throws {LaikaServiceError} If the API returns an error response (4xx, 5xx status codes)
+   * @note Network failures (timeout, DNS errors, connection issues) do NOT throw - they resolve with { success: false, errorType: 'NetworkError' }
+   */
+  pushScore(
+    expId: string,
+    bucketId: string,
+    promptVersionId: string,
+    scores: ScoreInput[],
+    options: PushScoreOptions
+  ): Promise<PushScoreResponse>;
 
   /**
    * Cleanup resources and stop background processes

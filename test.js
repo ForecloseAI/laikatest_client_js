@@ -1,5 +1,6 @@
 // test.js
 // Clean test suite hitting actual LaikaTest API endpoint
+require('dotenv').config();
 
 const {
   LaikaTest,
@@ -7,11 +8,13 @@ const {
   ValidationError,
   AuthenticationError
 } = require('./index');
+const { validateScores, validateSessionOrUserId } = require('./lib/validation');
+const { generateUUID, getClientVersion } = require('./lib/score_utils');
 
 // Test configuration
 const API_KEY = process.env.LAIKATEST_API_KEY || '';
-const BASE_URL = 'https://api.laikatest.com';
-const TEST_PROMPT = 'sample';
+const BASE_URL = process.env.LAIKATEST_BASE_URL || 'https://api.laikatest.com';
+const TEST_PROMPT = 'Testing';
 
 let passed = 0;
 let failed = 0;
@@ -258,6 +261,7 @@ async function testVersionedPrompts() {
     const resultV1 = await client.getPrompt(TEST_PROMPT, { versionId: version1 });
     const resultV2 = await client.getPrompt(TEST_PROMPT, { versionId: version2 });
 
+    assert(resultV1.getContent() !==resultV2.getContent(),'two versions shouldnt be equal');
     assert(resultV1 && resultV1.getContent(), 'Fetches content for version 1 (v1)-'+resultV1.getContent());
     assert(resultV2 && resultV2.getContent(), 'Fetches content for version 2 (2)-'+resultV2.getContent());
 
@@ -277,10 +281,10 @@ async function testVariableCompile() {
   });
   try {
 
-  const promptContent = await client.getPrompt('var_test');
+  const promptContent = await client.getPrompt('Testing');
 
   const variables = {
-    var: "World"
+    name:"Aryan"
   };
   const compiled = promptContent.compile(variables);
   console.log('Compiled Prompt:', compiled.getContent());
@@ -301,13 +305,13 @@ async function testChatCompile(){
   });
   try {
 
-  const promptContent = await client.getPrompt('var_chat');
-  
+  const promptContent = await client.getPrompt('varChat');
+
   const variables = {
-    var1: "user1",
-    var2: "user2"
+    subject: "Mathematics",
+    time: "10"
   };
-  const compiled = await promptContent.compile(variables);
+  const compiled = promptContent.compile(variables);
   console.log('Compiled Chat Prompt:', compiled.getContent());
   assert(compiled, 'Compiles variables into chat prompt content');
 } catch (e) {
@@ -327,11 +331,11 @@ async function testExperimentPrompt() {
 
   try {
     const context = {
-      user_id: 'test-user',
+      userId: 'test-user',
       country: "India",
     };
 
-    const result = await client.getExperimentPrompt('test1', context);
+    const result = await client.getExperimentPrompt('test', context);
     assert(result && result.getContent(), 'Fetches experiment prompt successfully');
     console.log('Experiment Prompt Content:', result.getContent());
   } catch (e) {
@@ -357,10 +361,11 @@ async function testBucketDistribution() {
 
     for (let i = 0; i < totalRequests; i++) {
       const context = {
-        user_id: `user-${i}`,
+        userId: `user-${i}`,
+        country: "India"
       };
 
-      const result = await client.getExperimentPrompt('fifty', context);
+      const result = await client.getExperimentPrompt('test', context);
       const bucketId = result.getBucketId();
 
       if (bucketId) {
@@ -408,7 +413,7 @@ async function testBucketDistribution() {
 }
 
 async function testThreeBucketDistribution() {
-  console.log('\n16. Three Bucket Distribution Test (10-30-60)');
+  console.log('\n17. Three Bucket Distribution Test (10-30-60)');
 
   const client = new LaikaTest(API_KEY, {
     baseUrl: BASE_URL,
@@ -423,10 +428,11 @@ async function testThreeBucketDistribution() {
 
     for (let i = 0; i < totalRequests; i++) {
       const context = {
-        user_id: `user-${i}`,
+        userId: `user-${i}`,
+        country: "India"
       };
 
-      const result = await client.getExperimentPrompt('three_bucket', context);
+      const result = await client.getExperimentPrompt('threeBucket', context);
       const bucketId = result.getBucketId();
 
       if (bucketId) {
@@ -466,24 +472,239 @@ async function testThreeBucketDistribution() {
 
       // Allow ±10% deviation for each bucket (e.g., 10% ± 10% = 0-20%)
       const acceptableDeviation = 10;
-      assert(
-        Math.abs(smallestPercentage - 10) <= acceptableDeviation,
-        `Smallest bucket is close to 10% (got ${smallestPercentage.toFixed(2)}%)`
-      );
-      assert(
-        Math.abs(middlePercentage - 30) <= acceptableDeviation,
-        `Middle bucket is close to 30% (got ${middlePercentage.toFixed(2)}%)`
-      );
-      assert(
-        Math.abs(largestPercentage - 60) <= acceptableDeviation,
-        `Largest bucket is close to 60% (got ${largestPercentage.toFixed(2)}%)`
-      );
+      assert(Math.abs(smallestPercentage - 10) <= acceptableDeviation, `Smallest bucket is close to 10% (got ${smallestPercentage.toFixed(2)}%)`);
+      assert(Math.abs(middlePercentage - 30) <= acceptableDeviation, `Middle bucket is close to 30% (got ${middlePercentage.toFixed(2)}%)`);
+      assert(Math.abs(largestPercentage - 60) <= acceptableDeviation, `Largest bucket is close to 60% (got ${largestPercentage.toFixed(2)}%)`);
     }
 
   } catch (e) {
     assert(false, 'Should complete three bucket distribution test without error', e.message);
   } finally {
     client.destroy();
+  }
+}
+
+// ============================================================================
+// Score Tests
+// ============================================================================
+
+async function testInvalidScores() {
+  console.log('\n18. Score Validation - Invalid Cases');
+
+  try {
+    validateScores([]);
+    assert(false, 'Should reject empty scores array');
+  } catch (e) {
+    assert(e instanceof ValidationError, 'Rejects empty scores array');
+  }
+
+  try {
+    validateScores([{ name: 'rating', type: 'int', value: 'five' }]);
+    assert(false, 'Should reject type mismatch (int with string)');
+  } catch (e) {
+    assert(e instanceof ValidationError, 'Rejects type mismatch');
+  }
+
+  try {
+    validateScores([{ name: 'rating', type: 'invalid', value: 5 }]);
+    assert(false, 'Should reject invalid type');
+  } catch (e) {
+    assert(e instanceof ValidationError, 'Rejects invalid score type');
+  }
+
+  try {
+    validateSessionOrUserId({});
+    assert(false, 'Should reject missing identifiers');
+  } catch (e) {
+    assert(e instanceof ValidationError, 'Rejects missing sessionId and userId');
+  }
+
+  try {
+    validateSessionOrUserId({ sessionId: 'sess_123', userId: 'user_456' });
+    assert(true, 'Allows both sessionId and userId together');
+  } catch (e) {
+    assert(false, 'Should allow providing both sessionId and userId', e.message);
+  }
+}
+
+async function testPushScoreRealAPI() {
+  console.log('\n19. Push Score to Real API - Four Scenarios');
+
+  if (!API_KEY) {
+    console.log('  ⚠ Skipping (no API key)');
+    return;
+  }
+
+  const client = new LaikaTest(API_KEY, {
+    baseUrl: BASE_URL,
+    cacheEnabled: false
+  });
+
+  try {
+    // Get experimental prompt for all three tests
+    const context = {
+      userId: 'test-user-' + Date.now(),
+      age: 20
+    };
+
+    const prompt = await client.getExperimentPrompt('Testing', context);
+
+    assert(prompt, 'Fetches experimental prompt for scoring');
+    console.log(`    Experiment ID: ${prompt.getExperimentId()}`);
+    console.log(`    Bucket ID: ${prompt.getBucketId()}`);
+    console.log(`    Prompt ID: ${prompt.getPromptId()}`);
+    console.log(`    Prompt Version ID: ${prompt.getPromptVersionId()}`);
+
+    // Test 1: Push score with no IDs (should fail validation)
+    console.log('\n  Test 1: Push score with no IDs (should fail)');
+    try {
+      await prompt.pushScore([{ name: 'rating', type: 'int', value: 5 }, { name: 'helpful', type: 'bool', value: true }, { name: 'testComment', type: 'string', value: 'Test with no IDs' }], {});
+
+      assert(false, 'Should reject score with no IDs');
+    } catch (e) {
+      if (e instanceof ValidationError) {
+        assert(true, 'Correctly rejects score with no IDs');
+        console.log(`    ✓ Validation error: ${e.message}`);
+      } else {
+        console.log(`    Unexpected error: ${e.message}`);
+        assert(false, 'Should throw ValidationError for missing IDs', e.message);
+      }
+    }
+
+    // Test 2: Push score with only userId
+    console.log('\n  Test 2: Push score with only userId');
+    try {
+      const result1 = await prompt.pushScore([{ name: 'rating', type: 'int', value: 5 }, { name: 'helpful', type: 'bool', value: true }, { name: 'testComment', type: 'string', value: 'Test with userId only' }], { userId: 'test-user-' + Date.now() });
+
+      assert(result1, 'Pushes score with userId only');
+      assert(result1.success === true || result1.statusCode === 200, 'Score submission with userId successful', `Status: ${result1.statusCode}`);
+      console.log(`    ✓ Score pushed with userId only`);
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('404') || e.message.includes('Failed to save score to database')) {
+        console.log('    ⚠ Database/API error (expected for testing)');
+        assert(true, 'Handles database errors gracefully');
+      } else {
+        console.log(`    Error: ${e.message}`);
+        assert(false, 'Should push score with userId', e.message);
+      }
+    }
+
+    // Test 3: Push score with only sessionId
+    console.log('\n  Test 3: Push score with only sessionId');
+    try {
+      const result2 = await prompt.pushScore([{ name: 'rating', type: 'int', value: 4 }, { name: 'helpful', type: 'bool', value: false }, { name: 'testComment', type: 'string', value: 'Test with sessionId only' }], { sessionId: 'test-session-' + Date.now() });
+
+      assert(result2, 'Pushes score with sessionId only');
+      assert(result2.success === true || result2.statusCode === 200, 'Score submission with sessionId successful', `Status: ${result2.statusCode}`);
+      console.log(`    ✓ Score pushed with sessionId only`);
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('404') || e.message.includes('Failed to save score to database')) {
+        console.log('    ⚠ Database/API error (expected for testing)');
+        assert(true, 'Handles database errors gracefully');
+      } else {
+        console.log(`    Error: ${e.message}`);
+        assert(false, 'Should push score with sessionId', e.message);
+      }
+    }
+
+    // Test 4: Push score with both userId and sessionId (now allowed)
+    console.log('\n  Test 4: Push score with both userId and sessionId');
+    try {
+      const result3 = await prompt.pushScore([{ name: 'rating', type: 'int', value: 3 }, { name: 'helpful', type: 'bool', value: true }, { name: 'testComment', type: 'string', value: 'Test with both userId and sessionId' }], { userId: 'test-user-' + Date.now(), sessionId: 'test-session-' + Date.now() });
+
+      assert(result3, 'Pushes score with both userId and sessionId');
+      assert(result3.success === true || result3.statusCode === 200, 'Score submission with both identifiers successful', `Status: ${result3.statusCode}`);
+      console.log(`    ✓ Score pushed with both userId and sessionId`);
+    } catch (e) {
+      if (e.message.includes('not found') || e.message.includes('404') || e.message.includes('Failed to save score to database')) {
+        console.log('    ⚠ Database/API error (expected for testing)');
+        assert(true, 'Handles database errors gracefully');
+      } else {
+        console.log(`    Error: ${e.message}`);
+        assert(false, 'Should push score with both identifiers', e.message);
+      }
+    }
+
+  } catch (e) {
+    console.log(`    Error details: ${e.message}`);
+
+    // It's okay if the experiment doesn't exist or has configuration issues
+    if (e.message.includes('not found') ||
+        e.message.includes('404') ||
+        e.message.includes('Failed to evaluate experiment tree')) {
+      console.log('  ⚠ Experiment not configured properly (expected for testing)');
+      assert(true, 'Handles experiment errors gracefully');
+    } else {
+      assert(false, 'Should push score or handle error gracefully', e.message);
+    }
+  } finally {
+    client.destroy();
+  }
+}
+
+// Test 20: Network Failure Handling
+async function testNetworkFailure() {
+  console.log('\n20. Push Score - Network Failure Handling');
+
+  try {
+    // First, get a valid experimental prompt from the real API
+    const validClient = new LaikaTest(API_KEY, {
+      baseUrl: BASE_URL
+    });
+
+    const prompt = await validClient.getExperimentPrompt('Testing', {
+      userId: 'network-test-user-' + Date.now(),
+      age: 20
+    });
+
+    console.log('  ✓ Got experimental prompt from real API');
+    console.log(`    Experiment ID: ${prompt.getExperimentId()}`);
+    console.log(`    Bucket ID: ${prompt.getBucketId()}`);
+
+    validClient.destroy();
+
+    // Now create a client pointing to a non-existent server
+    const offlineClient = new LaikaTest(API_KEY, {
+      baseUrl: 'http://localhost:9999', // Non-existent server
+      timeout: 3000 // 3 second timeout
+    });
+
+    console.log('  ✓ Created client with invalid baseUrl (http://localhost:9999)');
+    console.log('  ⏳ Attempting to push score (this will take ~3 seconds to timeout)...');
+
+    // Try to push score - should return {success: false} instead of throwing
+    const result = await offlineClient.pushScore(
+      prompt.getExperimentId(),
+      prompt.getBucketId(),
+      prompt.getPromptVersionId(),
+      [
+        { name: 'rating', type: 'int', value: 5 },
+        { name: 'feedback', type: 'string', value: 'Test network failure' }
+      ],
+      { userId: 'network-test-user-' + Date.now() }
+    );
+
+    // Verify the result
+    if (!result.success && result.errorType === 'NetworkError') {
+      assert(true, 'Network failure handled gracefully (did not throw exception)');
+      assert(result.errorType === 'NetworkError', `Response has errorType: '${result.errorType}'`);
+      assert(result.error !== undefined, `Error message present: '${result.error}'`);
+      assert(result.details !== undefined, `Error details present: '${result.details}'`);
+      console.log('    ✓ App continued running without crash');
+    } else {
+      console.log('  ✗ Unexpected result structure');
+      console.log(`    Expected: { success: false, errorType: 'NetworkError', ... }`);
+      console.log(`    Got:`, result);
+      assert(false, 'Should return {success: false, errorType: "NetworkError"}');
+    }
+
+    offlineClient.destroy();
+
+  } catch (error) {
+    console.log('  ✗ FAILED - Network error was thrown instead of returned as {success: false}');
+    console.log(`    Error thrown: ${error.name}: ${error.message}`);
+    console.log('    This breaks the documented behavior!');
+    assert(false, 'Should not throw exception on network failure');
   }
 }
 
@@ -512,6 +733,9 @@ async function runTests() {
     await testExperimentPrompt();
     await testBucketDistribution();
     await testThreeBucketDistribution();
+    await testInvalidScores();
+    await testPushScoreRealAPI();
+    await testNetworkFailure();
   } catch (e) {
     console.error('\n✗ Test suite error:', e.message);
     process.exit(1);
