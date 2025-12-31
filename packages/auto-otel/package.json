@@ -1,0 +1,60 @@
+{
+  "name": "@laikatest/auto-otel",
+  "version": "0.1.0",
+  "description": "One-line OpenTelemetry setup for LaikaTest",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"No tests yet\" && exit 0",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "laikatest",
+    "opentelemetry",
+    "otel",
+    "tracing",
+    "observability",
+    "llm",
+    "ai"
+  ],
+  "author": "Naman Arora",
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",
+    "@opentelemetry/instrumentation-http": "^0.208.0",
+    "@opentelemetry/instrumentation-openai": "^0.7.0",
+    "@opentelemetry/resources": "^2.2.0",
+    "@opentelemetry/sdk-node": "^0.208.0",
+    "@opentelemetry/semantic-conventions": "^1.28.0"
+  },
+  "devDependencies": {
+    "openai": "^6.14.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ForecloseAI/laikatest_client_js.git",
+    "directory": "packages/auto-otel"
+  },
+  "bugs": {
+    "url": "https://github.com/ForecloseAI/laikatest_client_js/issues"
+  },
+  "homepage": "https://github.com/ForecloseAI/laikatest_client_js/tree/main/packages/auto-otel#readme"
+}
