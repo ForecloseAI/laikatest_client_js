@@ -24,9 +24,9 @@ npm install @laikatest/auto-otel
 
 ```javascript
 // IMPORTANT: This must be the first import in your application
-const { initLaika } = require('@laikatest/auto-otel');
+const { initLaikaTest } = require('@laikatest/auto-otel');
 
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app'
 });
@@ -86,17 +86,17 @@ interface LaikaConfig {
 Group related traces by conversation or user session:
 
 ```javascript
-const { initLaika, setSessionId, clearSessionId } = require('@laikatest/auto-otel');
+const { initLaikaTest, setSessionId, clearSessionId } = require('@laikatest/auto-otel');
 
 // Option 1: Set at initialization
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
   sessionId: 'conversation-123'
 });
 
 // Option 2: Dynamic session ID
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
   getSessionId: () => getCurrentConversationId()
@@ -109,24 +109,24 @@ setSessionId('new-conversation-456');
 clearSessionId();
 ```
 
-All spans will include `laika.session.id` attribute for grouping in the UI.
+All spans will include `laikatest.session.id` attribute for grouping in the UI.
 
 ## User Tracking
 
 Associate traces with specific users:
 
 ```javascript
-const { initLaika, setUserId, clearUserId } = require('@laikatest/auto-otel');
+const { initLaikaTest, setUserId, clearUserId } = require('@laikatest/auto-otel');
 
 // Option 1: Set at initialization
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
   userId: 'user-789'
 });
 
 // Option 2: Dynamic user ID
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
   getUserId: () => getCurrentUserId()
@@ -139,7 +139,7 @@ setUserId('user-789');
 clearUserId();
 ```
 
-All spans will include `laika.user.id` attribute for per-user analytics.
+All spans will include `laikatest.user.id` attribute for per-user analytics.
 
 ## Custom Properties
 
@@ -156,7 +156,7 @@ const {
 } = require('@laikatest/auto-otel');
 
 // Option 1: Set default properties at initialization
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
   defaultProperties: {
@@ -188,7 +188,7 @@ removeProperty('requestId');
 clearProperties();
 ```
 
-Properties are prefixed with `laika.property.` in spans (e.g., `laika.property.feature`).
+Properties are prefixed with `laikatest.property.` in spans (e.g., `laikatest.property.feature`).
 
 ## A/B Test Linking (Differentiator)
 
@@ -196,8 +196,8 @@ When using `@laikatest/client` for A/B testing, experiment context is automatica
 
 ```javascript
 // Initialize OTel first
-const { initLaika } = require('@laikatest/auto-otel');
-initLaika({
+const { initLaikaTest } = require('@laikatest/auto-otel');
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app'
 });
@@ -217,9 +217,9 @@ const response = await openai.chat.completions.create({
 ```
 
 All subsequent spans will include:
-- `laika.experiment.id` - The experiment ID
-- `laika.experiment.variant_id` - The variant/bucket the user was assigned to
-- `laika.experiment.user_id` - The user ID used for bucketing
+- `laikatest.experiment.id` - The experiment ID
+- `laikatest.experiment.variant_id` - The variant/bucket the user was assigned to
+- `laikatest.experiment.user_id` - The user ID used for bucketing
 
 This enables correlation between A/B test results and LLM performance metrics.
 
@@ -227,7 +227,7 @@ This enables correlation between A/B test results and LLM performance metrics.
 
 ```javascript
 const {
-  initLaika,
+  initLaikaTest,
   setSessionId,
   setUserId,
   setProperties,
@@ -237,7 +237,7 @@ const { LaikaTest } = require('@laikatest/client');
 const { OpenAI } = require('openai');
 
 // Initialize with all features
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-chatbot',
   defaultProperties: {
@@ -281,12 +281,12 @@ process.on('SIGTERM', async () => {
 
 | Attribute | Description | Example |
 |-----------|-------------|---------|
-| `laika.session.id` | Session/conversation ID | `conv-123` |
-| `laika.user.id` | User identifier | `user-456` |
-| `laika.property.<key>` | Custom property | `laika.property.env: production` |
-| `laika.experiment.id` | A/B experiment ID | `exp-789` |
-| `laika.experiment.variant_id` | Assigned variant | `variant-a` |
-| `laika.experiment.user_id` | Experiment user | `user-456` |
+| `laikatest.session.id` | Session/conversation ID | `conv-123` |
+| `laikatest.user.id` | User identifier | `user-456` |
+| `laikatest.property.<key>` | Custom property | `laikatest.property.env: production` |
+| `laikatest.experiment.id` | A/B experiment ID | `exp-789` |
+| `laikatest.experiment.variant_id` | Assigned variant | `variant-a` |
+| `laikatest.experiment.user_id` | Experiment user | `user-456` |
 
 ## OpenAI Support
 
@@ -304,7 +304,7 @@ When using the OpenAI SDK, the following are automatically traced:
 To capture prompt and response content, set `captureContent: true`:
 
 ```javascript
-initLaika({
+initLaikaTest({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
   captureContent: true  // Enable content capture
@@ -329,7 +329,7 @@ initLaika({
 
 | Function | Description |
 |----------|-------------|
-| `initLaika(config)` | Initialize the SDK with configuration |
+| `initLaikaTest(config)` | Initialize the SDK with configuration |
 | `shutdown()` | Gracefully shutdown and flush spans |
 
 ### Session Context

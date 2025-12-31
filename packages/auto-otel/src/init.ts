@@ -13,7 +13,7 @@ import { setProperties } from './properties';
 const DEFAULT_ENDPOINT = 'https://api.laikatest.com/otel/v1/traces';
 let sdk: NodeSDK | null = null;
 
-// Creates OTLP exporter configured for Laika endpoint
+// Creates OTLP exporter configured for LaikaTest endpoint
 function createExporter(config: LaikaConfig): OTLPTraceExporter {
   const endpoint = config.endpoint || DEFAULT_ENDPOINT;
   return new OTLPTraceExporter({
@@ -102,7 +102,7 @@ function initializeContext(config: LaikaConfig): void {
 }
 
 // Initializes LaikaTest OpenTelemetry SDK with tracing and HTTP instrumentation
-export function initLaika(config: LaikaConfig): void {
+export function initLaikaTest(config: LaikaConfig): void {
   if (sdk) {
     console.warn('[LaikaTest] Already initialized, skipping');
     return;

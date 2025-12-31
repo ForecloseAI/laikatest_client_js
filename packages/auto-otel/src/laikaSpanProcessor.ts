@@ -1,5 +1,5 @@
 /**
- * Custom SpanProcessor that injects Laika context into all spans.
+ * Custom SpanProcessor that injects LaikaTest context into all spans.
  * Handles: session ID, user ID, custom properties, and experiment context.
  */
 
@@ -32,38 +32,38 @@ function getExperimentContext(): { experimentId: string; variantId: string; user
 }
 
 export class LaikaSpanProcessor implements SpanProcessor {
-  // Called when a span starts - inject all Laika context
+  // Called when a span starts - inject all LaikaTest context
   onStart(span: Span, _parentContext: Context): void {
     // Inject session ID
     const sessionId = getSessionId();
     if (sessionId) {
-      span.setAttribute('laika.session.id', sessionId);
+      span.setAttribute('laikatest.session.id', sessionId);
     }
 
     // Inject user ID
     const userId = getUserId();
     if (userId) {
-      span.setAttribute('laika.user.id', userId);
+      span.setAttribute('laikatest.user.id', userId);
     }
 
     // Inject custom properties (prefixed)
     const props = getProperties();
     Object.entries(props).forEach(([key, value]) => {
-      span.setAttribute(`laika.property.${key}`, value);
+      span.setAttribute(`laikatest.property.${key}`, value);
     });
 
     // Inject experiment context if available
     const experiment = getExperimentContext();
     if (experiment) {
-      span.setAttribute('laika.experiment.id', experiment.experimentId);
-      span.setAttribute('laika.experiment.variant_id', experiment.variantId);
+      span.setAttribute('laikatest.experiment.id', experiment.experimentId);
+      span.setAttribute('laikatest.experiment.variant_id', experiment.variantId);
       if (experiment.userId) {
-        span.setAttribute('laika.experiment.user_id', experiment.userId);
+        span.setAttribute('laikatest.experiment.user_id', experiment.userId);
       }
     }
   }
 
-  // Context is injected on start; no end processing needed for Laika attributes
+  // Context is injected on start; no end processing needed for LaikaTest attributes
   onEnd(_span: ReadableSpan): void {}
 
   async shutdown(): Promise<void> {}

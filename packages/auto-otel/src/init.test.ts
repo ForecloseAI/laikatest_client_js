@@ -2,7 +2,7 @@
  * Unit tests for init.ts - SDK initialization and shutdown
  */
 
-import { initLaika, shutdown } from './init';
+import { initLaikaTest, shutdown } from './init';
 
 // Mock the OpenTelemetry SDK
 jest.mock('@opentelemetry/sdk-node', () => ({
@@ -29,7 +29,7 @@ jest.mock('@opentelemetry/instrumentation-openai', () => ({
   OpenAIInstrumentation: jest.fn(),
 }));
 
-describe('initLaika', () => {
+describe('initLaikaTest', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -40,39 +40,39 @@ describe('initLaika', () => {
 
   test('throws error when apiKey is missing', () => {
     expect(() => {
-      initLaika({ apiKey: '', serviceName: 'test-service' });
+      initLaikaTest({ apiKey: '', serviceName: 'test-service' });
     }).toThrow('[LaikaTest] apiKey is required and must be a non-empty string');
   });
 
   test('throws error when serviceName is missing', () => {
     expect(() => {
-      initLaika({ apiKey: 'test-key', serviceName: '' });
+      initLaikaTest({ apiKey: 'test-key', serviceName: '' });
     }).toThrow('[LaikaTest] serviceName is required and must be a non-empty string');
   });
 
   test('throws error when apiKey is not a string', () => {
     expect(() => {
-      initLaika({ apiKey: 123 as any, serviceName: 'test-service' });
+      initLaikaTest({ apiKey: 123 as any, serviceName: 'test-service' });
     }).toThrow('[LaikaTest] apiKey is required and must be a non-empty string');
   });
 
   test('throws error when serviceName is not a string', () => {
     expect(() => {
-      initLaika({ apiKey: 'test-key', serviceName: null as any });
+      initLaikaTest({ apiKey: 'test-key', serviceName: null as any });
     }).toThrow('[LaikaTest] serviceName is required and must be a non-empty string');
   });
 
   test('initializes successfully with valid config', () => {
     expect(() => {
-      initLaika({ apiKey: 'test-key', serviceName: 'test-service' });
+      initLaikaTest({ apiKey: 'test-key', serviceName: 'test-service' });
     }).not.toThrow();
   });
 
   test('logs warning and skips when already initialized', () => {
     const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
-    initLaika({ apiKey: 'test-key', serviceName: 'test-service' });
-    initLaika({ apiKey: 'test-key2', serviceName: 'test-service2' });
+    initLaikaTest({ apiKey: 'test-key', serviceName: 'test-service' });
+    initLaikaTest({ apiKey: 'test-key2', serviceName: 'test-service2' });
 
     expect(consoleSpy).toHaveBeenCalledWith('[LaikaTest] Already initialized, skipping');
     consoleSpy.mockRestore();
@@ -89,7 +89,7 @@ describe('shutdown', () => {
   });
 
   test('can be called multiple times without error', async () => {
-    initLaika({ apiKey: 'test-key', serviceName: 'test-service' });
+    initLaikaTest({ apiKey: 'test-key', serviceName: 'test-service' });
 
     await expect(shutdown()).resolves.not.toThrow();
     await expect(shutdown()).resolves.not.toThrow();
@@ -98,7 +98,7 @@ describe('shutdown', () => {
   test('logs success message on shutdown', async () => {
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-    initLaika({ apiKey: 'test-key', serviceName: 'test-service' });
+    initLaikaTest({ apiKey: 'test-key', serviceName: 'test-service' });
     await shutdown();
 
     expect(consoleSpy).toHaveBeenCalledWith('[LaikaTest] SDK shut down');
