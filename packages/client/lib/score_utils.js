@@ -73,17 +73,13 @@ async function pushScore(apiKey, baseUrl, expId, bucketId, promptVersionId, scor
     body: JSON.stringify(requestBody)
   };
 
+  const { NetworkError } = require('./errors');
+
   let response;
   try {
     response = await makeHttpRequest(url, requestOptions, options.timeout);
   } catch (error) {
-    console.error('[Laikatest SDK] Failed to connect to LaikaTest API:', error.message);
-    return {
-      success: false,
-      error: 'Failed to connect to LaikaTest API',
-      errorType: 'NetworkError',
-      details: error.message
-    };
+    throw new NetworkError('Failed to connect to LaikaTest API', error);
   }
 
   const parsed = parseApiResponse(response.data);

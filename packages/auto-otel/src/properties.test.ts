@@ -1,5 +1,6 @@
 /**
  * Unit tests for properties.ts - Custom Properties API
+ * Tests run within AsyncLocalStorage context using runWithProperties.
  */
 
 import {
@@ -7,134 +8,211 @@ import {
   setProperties,
   getProperties,
   clearProperties,
-  removeProperty
+  removeProperty,
+  runWithProperties,
+  runWithPropertiesAsync
 } from './properties';
 
 describe('Custom Properties API', () => {
-  beforeEach(() => {
-    clearProperties();
-  });
-
   describe('setProperty', () => {
     test('sets a string property', () => {
-      setProperty('environment', 'production');
-      expect(getProperties()).toEqual({ environment: 'production' });
+      runWithProperties(() => {
+        setProperty('environment', 'production');
+        expect(getProperties()).toEqual({ environment: 'production' });
+      });
     });
 
     test('sets a number property', () => {
-      setProperty('retryCount', 3);
-      expect(getProperties()).toEqual({ retryCount: 3 });
+      runWithProperties(() => {
+        setProperty('retryCount', 3);
+        expect(getProperties()).toEqual({ retryCount: 3 });
+      });
     });
 
     test('sets a boolean property', () => {
-      setProperty('isEnabled', true);
-      expect(getProperties()).toEqual({ isEnabled: true });
+      runWithProperties(() => {
+        setProperty('isEnabled', true);
+        expect(getProperties()).toEqual({ isEnabled: true });
+      });
     });
 
     test('overwrites existing property', () => {
-      setProperty('env', 'dev');
-      setProperty('env', 'prod');
-      expect(getProperties()).toEqual({ env: 'prod' });
+      runWithProperties(() => {
+        setProperty('env', 'dev');
+        setProperty('env', 'prod');
+        expect(getProperties()).toEqual({ env: 'prod' });
+      });
     });
 
     test('handles special characters in key', () => {
-      setProperty('my-prop_name.v1', 'value');
-      expect(getProperties()).toEqual({ 'my-prop_name.v1': 'value' });
+      runWithProperties(() => {
+        setProperty('my-prop_name.v1', 'value');
+        expect(getProperties()).toEqual({ 'my-prop_name.v1': 'value' });
+      });
     });
   });
 
   describe('setProperties', () => {
     test('sets multiple properties at once', () => {
-      setProperties({
-        environment: 'production',
-        version: '1.2.3',
-        tier: 'enterprise'
-      });
-      expect(getProperties()).toEqual({
-        environment: 'production',
-        version: '1.2.3',
-        tier: 'enterprise'
+      runWithProperties(() => {
+        setProperties({
+          environment: 'production',
+          version: '1.2.3',
+          tier: 'enterprise'
+        });
+        expect(getProperties()).toEqual({
+          environment: 'production',
+          version: '1.2.3',
+          tier: 'enterprise'
+        });
       });
     });
 
     test('merges with existing properties', () => {
-      setProperty('existing', 'value');
-      setProperties({ new1: 'a', new2: 'b' });
-      expect(getProperties()).toEqual({
-        existing: 'value',
-        new1: 'a',
-        new2: 'b'
+      runWithProperties(() => {
+        setProperty('existing', 'value');
+        setProperties({ new1: 'a', new2: 'b' });
+        expect(getProperties()).toEqual({
+          existing: 'value',
+          new1: 'a',
+          new2: 'b'
+        });
       });
     });
 
     test('overwrites existing when keys collide', () => {
-      setProperty('key', 'old');
-      setProperties({ key: 'new', other: 'value' });
-      expect(getProperties()).toEqual({ key: 'new', other: 'value' });
+      runWithProperties(() => {
+        setProperty('key', 'old');
+        setProperties({ key: 'new', other: 'value' });
+        expect(getProperties()).toEqual({ key: 'new', other: 'value' });
+      });
     });
 
     test('handles empty object', () => {
-      setProperty('existing', 'value');
-      setProperties({});
-      expect(getProperties()).toEqual({ existing: 'value' });
+      runWithProperties(() => {
+        setProperty('existing', 'value');
+        setProperties({});
+        expect(getProperties()).toEqual({ existing: 'value' });
+      });
     });
 
     test('handles mixed types', () => {
-      setProperties({
-        str: 'text',
-        num: 42,
-        bool: false
-      });
-      expect(getProperties()).toEqual({
-        str: 'text',
-        num: 42,
-        bool: false
+      runWithProperties(() => {
+        setProperties({
+          str: 'text',
+          num: 42,
+          bool: false
+        });
+        expect(getProperties()).toEqual({
+          str: 'text',
+          num: 42,
+          bool: false
+        });
       });
     });
   });
 
   describe('getProperties', () => {
     test('returns empty object when no properties set', () => {
-      expect(getProperties()).toEqual({});
+      runWithProperties(() => {
+        expect(getProperties()).toEqual({});
+      });
     });
 
     test('returns copy of properties', () => {
-      setProperty('key', 'value');
-      const props = getProperties();
-      props['modified'] = 'test';
-      expect(getProperties()).toEqual({ key: 'value' });
+      runWithProperties(() => {
+        setProperty('key', 'value');
+        const props = getProperties();
+        props['modified'] = 'test';
+        expect(getProperties()).toEqual({ key: 'value' });
+      });
     });
   });
 
   describe('clearProperties', () => {
     test('removes all properties', () => {
-      setProperties({ a: 1, b: 2, c: 3 });
-      clearProperties();
-      expect(getProperties()).toEqual({});
+      runWithProperties(() => {
+        setProperties({ a: 1, b: 2, c: 3 });
+        clearProperties();
+        expect(getProperties()).toEqual({});
+      });
     });
 
     test('handles clearing empty properties', () => {
-      clearProperties();
-      expect(getProperties()).toEqual({});
+      runWithProperties(() => {
+        clearProperties();
+        expect(getProperties()).toEqual({});
+      });
     });
   });
 
   describe('removeProperty', () => {
     test('removes specific property', () => {
-      setProperties({ a: 1, b: 2, c: 3 });
-      removeProperty('b');
-      expect(getProperties()).toEqual({ a: 1, c: 3 });
+      runWithProperties(() => {
+        setProperties({ a: 1, b: 2, c: 3 });
+        removeProperty('b');
+        expect(getProperties()).toEqual({ a: 1, c: 3 });
+      });
     });
 
     test('handles removing non-existent property', () => {
-      setProperty('existing', 'value');
-      removeProperty('nonexistent');
-      expect(getProperties()).toEqual({ existing: 'value' });
+      runWithProperties(() => {
+        setProperty('existing', 'value');
+        removeProperty('nonexistent');
+        expect(getProperties()).toEqual({ existing: 'value' });
+      });
     });
 
     test('handles removing from empty properties', () => {
-      removeProperty('any');
+      runWithProperties(() => {
+        removeProperty('any');
+        expect(getProperties()).toEqual({});
+      });
+    });
+  });
+});
+
+describe('Properties Isolation', () => {
+  test('properties are isolated between runWithProperties calls', () => {
+    runWithProperties(() => {
+      setProperty('key', 'value-A');
+    });
+
+    runWithProperties(() => {
       expect(getProperties()).toEqual({});
     });
+  });
+
+  test('runWithPropertiesAsync provides isolated async context', async () => {
+    await runWithPropertiesAsync(async () => {
+      setProperty('asyncKey', 'asyncValue');
+      await Promise.resolve();
+      expect(getProperties()).toEqual({ asyncKey: 'asyncValue' });
+    });
+
+    await runWithPropertiesAsync(async () => {
+      expect(getProperties()).toEqual({});
+    });
+  });
+
+  test('concurrent properties contexts do not interfere', async () => {
+    const results: Record<string, string | number | boolean>[] = [];
+
+    const context1 = runWithPropertiesAsync(async () => {
+      setProperty('ctx', 'context-1');
+      await new Promise(resolve => setTimeout(resolve, 10));
+      results.push(getProperties());
+    });
+
+    const context2 = runWithPropertiesAsync(async () => {
+      setProperty('ctx', 'context-2');
+      await new Promise(resolve => setTimeout(resolve, 5));
+      results.push(getProperties());
+    });
+
+    await Promise.all([context1, context2]);
+
+    expect(results).toContainEqual({ ctx: 'context-1' });
+    expect(results).toContainEqual({ ctx: 'context-2' });
   });
 });

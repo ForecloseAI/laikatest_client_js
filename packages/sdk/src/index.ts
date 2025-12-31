@@ -10,11 +10,15 @@ export {
   setUserId,
   getUserId,
   clearUserId,
+  runWithContext,
+  runWithContextAsync,
   setProperty,
   setProperties,
   getProperties,
   clearProperties,
   removeProperty,
+  runWithProperties,
+  runWithPropertiesAsync,
   shutdown,
 } from '@laikatest/auto-otel';
 

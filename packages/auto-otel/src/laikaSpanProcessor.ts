@@ -8,18 +8,27 @@ import { Context } from '@opentelemetry/api';
 import { getSessionId, getUserId } from './context';
 import { getProperties } from './properties';
 
-// Tries to get experiment context from @laikatest/client if available
+/**
+ * Retrieves current experiment context if @laikatest/js-client is installed.
+ * Uses dynamic require to keep the client package optional - tracing works
+ * standalone but gains experiment context injection when client is also used.
+ */
 function getExperimentContext(): { experimentId: string; variantId: string; userId?: string } | null {
   try {
-    // Dynamic require to avoid hard dependency on @laikatest/client
-    const client = require('@laikatest/client');
+    const client = require('@laikatest/js-client');
     if (client && typeof client.getCurrentExperiment === 'function') {
       return client.getCurrentExperiment();
     }
-  } catch {
-    // @laikatest/client not installed or no experiment context
+    return null;
+  } catch (error: unknown) {
+    // MODULE_NOT_FOUND is expected when client package is not installed
+    if ((error as NodeJS.ErrnoException).code === 'MODULE_NOT_FOUND') {
+      return null;
+    }
+    // Log unexpected errors - they indicate real problems
+    console.error('[LaikaTest] Failed to get experiment context:', error);
+    return null;
   }
-  return null;
 }
 
 export class LaikaSpanProcessor implements SpanProcessor {
@@ -54,20 +63,10 @@ export class LaikaSpanProcessor implements SpanProcessor {
     }
   }
 
-  // Called when a span ends - no action needed
-  onEnd(_span: ReadableSpan): void {
-    // No-op
-  }
+  // Context is injected on start; no end processing needed for Laika attributes
+  onEnd(_span: ReadableSpan): void {}
 
-  // Shuts down the processor
-  async shutdown(): Promise<void> {
-    // No resources to clean up
-    return Promise.resolve();
-  }
+  async shutdown(): Promise<void> {}
 
-  // Forces a flush of any pending spans
-  async forceFlush(): Promise<void> {
-    // No buffering, nothing to flush
-    return Promise.resolve();
-  }
+  async forceFlush(): Promise<void> {}
 }

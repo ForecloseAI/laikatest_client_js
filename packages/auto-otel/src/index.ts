@@ -2,21 +2,25 @@
 export { initLaika, shutdown } from './init';
 export { LaikaConfig } from './types';
 
-// Session and user context
+// Session and user context (with AsyncLocalStorage support)
 export {
   setSessionId,
   getSessionId,
   clearSessionId,
   setUserId,
   getUserId,
-  clearUserId
+  clearUserId,
+  runWithContext,
+  runWithContextAsync
 } from './context';
 
-// Custom properties
+// Custom properties (with AsyncLocalStorage support)
 export {
   setProperty,
   setProperties,
   getProperties,
   clearProperties,
-  removeProperty
+  removeProperty,
+  runWithProperties,
+  runWithPropertiesAsync
 } from './properties';

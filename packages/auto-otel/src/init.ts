@@ -40,20 +40,40 @@ function createInstrumentations(config: LaikaConfig) {
 // Manually shuts down the SDK and flushes pending spans
 export async function shutdown(): Promise<void> {
   if (sdk) {
-    await sdk.shutdown();
-    sdk = null;
-    console.log('[LaikaTest] SDK shut down');
+    try {
+      await sdk.shutdown();
+      console.log('[LaikaTest] SDK shut down');
+    } catch (error) {
+      console.error('[LaikaTest] Error during SDK shutdown:', error);
+    } finally {
+      sdk = null;
+    }
   }
 }
 
 // Registers signal handlers for graceful SDK shutdown
 function setupShutdown(): void {
   const shutdownHandler = async () => {
-    await shutdown();
-    process.exit(0);
+    try {
+      await shutdown();
+      process.exit(0);
+    } catch (error) {
+      console.error('[LaikaTest] Shutdown failed:', error);
+      process.exit(1);
+    }
   };
   process.on('SIGTERM', shutdownHandler);
   process.on('SIGINT', shutdownHandler);
+}
+
+// Validates required configuration fields
+function validateConfig(config: LaikaConfig): void {
+  if (!config.apiKey || typeof config.apiKey !== 'string') {
+    throw new Error('[LaikaTest] apiKey is required and must be a non-empty string');
+  }
+  if (!config.serviceName || typeof config.serviceName !== 'string') {
+    throw new Error('[LaikaTest] serviceName is required and must be a non-empty string');
+  }
 }
 
 // Enables OpenTelemetry diagnostic logging
@@ -88,6 +108,8 @@ export function initLaika(config: LaikaConfig): void {
     return;
   }
 
+  validateConfig(config);
+
   if (config.debug) {
     enableDebugLogging();
   }
@@ -102,7 +124,13 @@ export function initLaika(config: LaikaConfig): void {
     spanProcessors: [new LaikaSpanProcessor()]
   });
 
-  sdk.start();
-  setupShutdown();
-  console.log('[LaikaTest] OpenTelemetry initialized');
+  try {
+    sdk.start();
+    setupShutdown();
+    console.log('[LaikaTest] OpenTelemetry initialized');
+  } catch (error) {
+    sdk = null;
+    console.error('[LaikaTest] Failed to start OpenTelemetry SDK:', error);
+    throw error;
+  }
 }
