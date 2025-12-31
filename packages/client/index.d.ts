@@ -15,16 +15,13 @@ export type ScoreType = 'int' | 'bool' | 'string';
 export type ScoreSource = 'sdk' | 'ui';
 
 /**
- * Individual score item structure
+ * Individual score item structure.
+ * Uses discriminated union to enforce type-value matching at compile time.
  */
-export interface ScoreInput {
-  /** Name of the score metric (e.g., 'rating', 'helpful') */
-  name: string;
-  /** Type of the score value */
-  type: ScoreType;
-  /** The actual score value (must match the type) */
-  value: number | boolean | string;
-}
+export type ScoreInput =
+  | { name: string; type: 'int'; value: number }
+  | { name: string; type: 'bool'; value: boolean }
+  | { name: string; type: 'string'; value: string };
 
 /**
  * Options for pushScore method
@@ -35,17 +32,14 @@ export type PushScoreOptions =
   | { userId: string; sessionId?: never }
   | { userId: string; sessionId: string };
 /**
- * Response from pushScore method
- * Success case: { success: true, statusCode: 200 | 201, data: any }
- * Network failure case: { success: false, error: string, errorType: 'NetworkError', details: string }
+ * Response from pushScore method.
+ * Returns success response on successful API call.
+ * Throws NetworkError on network failures.
  */
 export interface PushScoreResponse {
-  success: boolean;
-  statusCode?: number;
-  data?: any;
-  error?: string;
-  errorType?: 'NetworkError';
-  details?: string;
+  success: true;
+  statusCode: number;
+  data: unknown;
 }
 
 export class Prompt<C = PromptContent> {
@@ -69,12 +63,12 @@ export class Prompt<C = PromptContent> {
    * Push score for experimental prompts
    * @param scores - Array of score items
    * @param options - Options object containing sessionId and/or userId (at least one required)
-   * @returns Promise resolving to push score response. On success: { success: true, statusCode, data }. On network failure: { success: false, errorType: 'NetworkError', error, details }
+   * @returns Promise resolving to push score response with { success: true, statusCode, data }
    * @throws {Error} If prompt is not from an experiment
    * @throws {ValidationError} If scores are invalid or neither sessionId nor userId is provided
    * @throws {AuthenticationError} If API authentication fails
    * @throws {LaikaServiceError} If the API returns an error response (4xx, 5xx status codes)
-   * @note Network failures (timeout, DNS errors, connection issues) do NOT throw - they resolve with { success: false, errorType: 'NetworkError' }
+   * @throws {NetworkError} If network request fails (timeout, DNS errors, connection issues)
    */
   pushScore(
     scores: ScoreInput[],
@@ -122,11 +116,11 @@ export class LaikaTest {
    * @param promptVersionId - Prompt Version ID
    * @param scores - Array of score items
    * @param options - Options object containing sessionId and/or userId (at least one required)
-   * @returns Promise resolving to push score response. On success: { success: true, statusCode, data }. On network failure: { success: false, errorType: 'NetworkError', error, details }
+   * @returns Promise resolving to push score response with { success: true, statusCode, data }
    * @throws {ValidationError} If inputs are invalid or neither sessionId nor userId is provided
    * @throws {AuthenticationError} If API authentication fails
    * @throws {LaikaServiceError} If the API returns an error response (4xx, 5xx status codes)
-   * @note Network failures (timeout, DNS errors, connection issues) do NOT throw - they resolve with { success: false, errorType: 'NetworkError' }
+   * @throws {NetworkError} If network request fails (timeout, DNS errors, connection issues)
    */
   pushScore(
     expId: string,
