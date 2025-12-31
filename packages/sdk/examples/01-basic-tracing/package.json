@@ -1,0 +1,19 @@
+{
+  "name": "@laikatest/sdk-example-basic-tracing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Basic OpenTelemetry tracing demo for @laikatest/sdk",
+  "scripts": {
+    "start": "npx ts-node index.ts"
+  },
+  "dependencies": {
+    "@laikatest/sdk": "file:../..",
+    "openai": "^4.0.0",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}

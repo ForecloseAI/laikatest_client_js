@@ -6,6 +6,9 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { LaikaConfig } from './types';
+import { LaikaSpanProcessor } from './laikaSpanProcessor';
+import { setSessionId, setUserId } from './context';
+import { setProperties } from './properties';
 
 const DEFAULT_ENDPOINT = 'https://api.laikatest.com/otel/v1/traces';
 let sdk: NodeSDK | null = null;
@@ -58,6 +61,26 @@ function enableDebugLogging(): void {
   diag.setLogger(new DiagConsoleLogger(), DiagLogLevel.DEBUG);
 }
 
+// Initializes context from config options
+function initializeContext(config: LaikaConfig): void {
+  // Set session ID from config
+  const sessionId = config.sessionId || config.getSessionId?.();
+  if (sessionId) {
+    setSessionId(sessionId);
+  }
+
+  // Set user ID from config
+  const userId = config.userId || config.getUserId?.();
+  if (userId) {
+    setUserId(userId);
+  }
+
+  // Set default properties from config
+  if (config.defaultProperties) {
+    setProperties(config.defaultProperties);
+  }
+}
+
 // Initializes LaikaTest OpenTelemetry SDK with tracing and HTTP instrumentation
 export function initLaika(config: LaikaConfig): void {
   if (sdk) {
@@ -69,10 +92,14 @@ export function initLaika(config: LaikaConfig): void {
     enableDebugLogging();
   }
 
+  // Initialize context from config
+  initializeContext(config);
+
   sdk = new NodeSDK({
     resource: createResource(config.serviceName),
     traceExporter: createExporter(config),
-    instrumentations: createInstrumentations(config)
+    instrumentations: createInstrumentations(config),
+    spanProcessors: [new LaikaSpanProcessor()]
   });
 
   sdk.start();

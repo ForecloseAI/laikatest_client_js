@@ -38,6 +38,7 @@
   },
   "homepage": "https://github.com/ForecloseAI/laikatest_client_js#readme",
   "devDependencies": {
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "jest": "^30.2.0"
   }
 }

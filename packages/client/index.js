@@ -14,6 +14,19 @@ const {
   AuthenticationError
 } = require('./lib/errors');
 
+// Module-level experiment context for tracing integration
+let currentExperiment = null;
+
+// Gets the current experiment context for tracing
+function getCurrentExperiment() {
+  return currentExperiment;
+}
+
+// Clears the current experiment context
+function clearCurrentExperiment() {
+  currentExperiment = null;
+}
+
 // Main LaikaTest client class
 class LaikaTest {
   // Initialize client with API key 
@@ -61,6 +74,13 @@ class LaikaTest {
     validateExperimentTitle(experimentTitle);
     const result = await evaluateExperiment(this.apiKey, this.baseUrl, experimentTitle, context, this.timeout);
 
+    // Set current experiment context for tracing integration
+    currentExperiment = {
+      experimentId: result.experimentId,
+      variantId: result.bucketId,
+      userId: context.userId || null
+    };
+
     return new Prompt(result.promptContent, result.promptMetadata.promptVersionId, result.experimentId, result.bucketId, this, result.promptMetadata.promptId);
   }
 
@@ -82,12 +102,14 @@ class LaikaTest {
   }
 }
 
-// Export main class and error classes
+// Export main class, error classes, and experiment context functions
 module.exports = {
   LaikaTest,
   Prompt,
   LaikaServiceError,
   NetworkError,
   ValidationError,
-  AuthenticationError
+  AuthenticationError,
+  getCurrentExperiment,
+  clearCurrentExperiment
 };
