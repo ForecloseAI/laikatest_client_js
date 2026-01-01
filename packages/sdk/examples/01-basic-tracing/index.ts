@@ -6,18 +6,18 @@
  */
 
 import 'dotenv/config';
-import { Laika, setSessionId, setUserId, setProperty } from '@laikatest/sdk';
+import { LaikaTest, setSessionId, setUserId, setProperty } from '@laikatest/sdk';
 import OpenAI from 'openai';
 
 async function main() {
   // Initialize the SDK - this sets up OpenTelemetry tracing
-  const laika = Laika.init({
+  const laika = LaikaTest.init({
     apiKey: process.env.LAIKA_API_KEY!,
     serviceName: 'basic-tracing-demo',
     debug: true, // Enable debug logging to see what's happening
   });
 
-  console.log('Laika SDK initialized');
+  console.log('LaikaTest SDK initialized');
   console.log('Tracing enabled:', laika.isTracingEnabled());
 
   // Set context that will appear in all traces
