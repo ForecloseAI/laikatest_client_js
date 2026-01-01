@@ -8,7 +8,7 @@
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
 import { LaikaTest, setSessionId, setUserId, setProperty, clearSessionId, clearUserId, clearProperties } from '@laikatest/sdk';
-import OpenAI from 'openai';
+// NOTE: OpenAI is imported dynamically AFTER SDK init for instrumentation to work
 
 const PORT = process.env.PORT || 3000;
 
@@ -68,6 +68,8 @@ app.post('/chat', async (req: Request, res: Response) => {
   }
 
   try {
+    // Import OpenAI dynamically so instrumentation can hook into it
+    const { default: OpenAI } = await import('openai');
     const openai = new OpenAI();
 
     const response = await openai.chat.completions.create({
