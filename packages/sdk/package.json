@@ -1,6 +1,6 @@
 {
   "name": "@laikatest/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Unified LaikaTest SDK for tracing and A/B testing",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -7,7 +7,7 @@
     "start": "npx ts-node index.ts"
   },
   "dependencies": {
-    "@laikatest/sdk": "file:../..",
+    "@laikatest/sdk": "latest",
     "openai": "^4.0.0",
     "dotenv": "^16.0.0"
   },

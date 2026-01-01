@@ -17,7 +17,7 @@ export interface LaikaConfig {
   experiments?: boolean;
 
   // Tracing options (passed to @laikatest/auto-otel)
-  /** OTLP endpoint URL. Default: https://api.laikatest.com/otel/v1/traces */
+  /** OTLP endpoint URL. If not set, derived from baseUrl + '/otel/v1/traces' */
   endpoint?: string;
 
   /** Capture prompt/response content. Default: false (privacy-first) */
@@ -43,7 +43,7 @@ export interface LaikaConfig {
   defaultProperties?: Record<string, string | number | boolean>;
 
   // Client options (passed to @laikatest/client)
-  /** API base URL. Default: https://api.laikatest.com */
+  /** API base URL. Also used to derive OTLP endpoint if not set. Default: https://api.laikatest.com */
   baseUrl?: string;
 
   /** Request timeout in milliseconds. Default: 10000 */

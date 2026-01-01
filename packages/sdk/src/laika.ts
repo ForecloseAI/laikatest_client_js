@@ -21,13 +21,17 @@ export class LaikaTest {
   static init(config: LaikaConfig): LaikaTest {
     const instance = new LaikaTest();
 
+    // Derive OTLP endpoint from baseUrl if not explicitly set
+    const baseUrl = config.baseUrl || 'https://api.laikatest.com';
+    const endpoint = config.endpoint || `${baseUrl}/otel/v1/traces`;
+
     try {
       // Initialize tracing (if enabled, default: true)
       if (config.tracing !== false) {
         initLaikaTest({
           apiKey: config.apiKey,
           serviceName: config.serviceName,
-          endpoint: config.endpoint,
+          endpoint: endpoint,
           captureContent: config.captureContent,
           debug: config.debug,
           sessionId: config.sessionId,
@@ -42,7 +46,7 @@ export class LaikaTest {
       // Initialize experiments client (if enabled, default: true)
       if (config.experiments !== false) {
         instance.client = new LaikaTestClient(config.apiKey, {
-          baseUrl: config.baseUrl,
+          baseUrl: baseUrl,
           timeout: config.timeout,
           cacheEnabled: config.cacheEnabled,
           cacheTTL: config.cacheTTL,
