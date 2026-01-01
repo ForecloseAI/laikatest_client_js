@@ -1,5 +1,5 @@
 // Main class
-export { Laika } from './laika';
+export { LaikaTest } from './laika';
 export { LaikaConfig } from './types';
 
 // Re-export from auto-otel for convenience

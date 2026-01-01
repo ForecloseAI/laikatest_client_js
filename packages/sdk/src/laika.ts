@@ -1,13 +1,13 @@
-import { initLaika, shutdown } from '@laikatest/auto-otel';
-import { LaikaTest, Prompt, GetPromptOptions } from '@laikatest/js-client';
+import { initLaikaTest, shutdown } from '@laikatest/auto-otel';
+import { LaikaTest as LaikaTestClient, Prompt, GetPromptOptions } from '@laikatest/js-client';
 import { LaikaConfig } from './types';
 
 /**
  * Unified LaikaTest SDK for tracing and experiments.
  * Provides a single entry point for both observability and A/B testing.
  */
-export class Laika {
-  private client: LaikaTest | null = null;
+export class LaikaTest {
+  private client: LaikaTestClient | null = null;
   private tracingEnabled: boolean = false;
 
   private constructor() {}
@@ -18,13 +18,13 @@ export class Laika {
    * @throws {Error} If apiKey or serviceName is missing/invalid
    * @throws {Error} If OpenTelemetry SDK fails to start
    */
-  static init(config: LaikaConfig): Laika {
-    const instance = new Laika();
+  static init(config: LaikaConfig): LaikaTest {
+    const instance = new LaikaTest();
 
     try {
       // Initialize tracing (if enabled, default: true)
       if (config.tracing !== false) {
-        initLaika({
+        initLaikaTest({
           apiKey: config.apiKey,
           serviceName: config.serviceName,
           endpoint: config.endpoint,
@@ -41,7 +41,7 @@ export class Laika {
 
       // Initialize experiments client (if enabled, default: true)
       if (config.experiments !== false) {
-        instance.client = new LaikaTest(config.apiKey, {
+        instance.client = new LaikaTestClient(config.apiKey, {
           baseUrl: config.baseUrl,
           timeout: config.timeout,
           cacheEnabled: config.cacheEnabled,
@@ -127,7 +127,7 @@ export class Laika {
     }
 
     if (errors.length > 0) {
-      console.error('[Laika] Errors during shutdown:', errors);
+      console.error('[LaikaTest] Errors during shutdown:', errors);
     }
   }
 

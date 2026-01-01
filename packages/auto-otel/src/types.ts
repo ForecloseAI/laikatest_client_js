@@ -3,7 +3,7 @@
  * Matches PRD Path 1 - Greenfield integration.
  */
 export interface LaikaConfig {
-  /** API key for Laika authentication (required) */
+  /** API key for LaikaTest authentication (required) */
   apiKey: string;
   /** Service name for resource identification (required) */
   serviceName: string;

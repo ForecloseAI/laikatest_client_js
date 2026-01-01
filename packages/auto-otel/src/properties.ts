@@ -1,6 +1,6 @@
 /**
  * Custom properties API for adding metadata to spans.
- * Properties are prefixed with 'laika.property.' for namespacing.
+ * Properties are prefixed with 'laikatest.property.' for namespacing.
  *
  * Uses AsyncLocalStorage for request-scoped properties in concurrent environments.
  */
@@ -17,7 +17,7 @@ function getPropertyStore(): PropertyMap {
   return asyncLocalStorage.getStore() || new Map();
 }
 
-// Sets a single custom property (prefixed with 'laika.property.')
+// Sets a single custom property (prefixed with 'laikatest.property.')
 export function setProperty(key: string, value: PropertyValue): void {
   const store = asyncLocalStorage.getStore();
   if (store) {

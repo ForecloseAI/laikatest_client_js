@@ -32,7 +32,7 @@ describe('LaikaSpanProcessor', () => {
         const mockSpan = new MockSpan();
         setSessionId('session-123');
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.session.id']).toBe('session-123');
+        expect(mockSpan.attributes['laikatest.session.id']).toBe('session-123');
       });
     });
 
@@ -40,7 +40,7 @@ describe('LaikaSpanProcessor', () => {
       runWithContext(() => {
         const mockSpan = new MockSpan();
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.session.id']).toBeUndefined();
+        expect(mockSpan.attributes['laikatest.session.id']).toBeUndefined();
       });
     });
 
@@ -49,7 +49,7 @@ describe('LaikaSpanProcessor', () => {
         const mockSpan = new MockSpan();
         setUserId('user-456');
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.user.id']).toBe('user-456');
+        expect(mockSpan.attributes['laikatest.user.id']).toBe('user-456');
       });
     });
 
@@ -57,7 +57,7 @@ describe('LaikaSpanProcessor', () => {
       runWithContext(() => {
         const mockSpan = new MockSpan();
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.user.id']).toBeUndefined();
+        expect(mockSpan.attributes['laikatest.user.id']).toBeUndefined();
       });
     });
 
@@ -67,8 +67,8 @@ describe('LaikaSpanProcessor', () => {
         setSessionId('session-123');
         setUserId('user-456');
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.session.id']).toBe('session-123');
-        expect(mockSpan.attributes['laika.user.id']).toBe('user-456');
+        expect(mockSpan.attributes['laikatest.session.id']).toBe('session-123');
+        expect(mockSpan.attributes['laikatest.user.id']).toBe('user-456');
       });
     });
   });
@@ -82,8 +82,8 @@ describe('LaikaSpanProcessor', () => {
           version: '1.0.0'
         });
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.property.environment']).toBe('production');
-        expect(mockSpan.attributes['laika.property.version']).toBe('1.0.0');
+        expect(mockSpan.attributes['laikatest.property.environment']).toBe('production');
+        expect(mockSpan.attributes['laikatest.property.version']).toBe('1.0.0');
       });
     });
 
@@ -96,9 +96,9 @@ describe('LaikaSpanProcessor', () => {
           boolProp: true
         });
         processor.onStart(mockSpan as any, mockContext);
-        expect(mockSpan.attributes['laika.property.strProp']).toBe('text');
-        expect(mockSpan.attributes['laika.property.numProp']).toBe(42);
-        expect(mockSpan.attributes['laika.property.boolProp']).toBe(true);
+        expect(mockSpan.attributes['laikatest.property.strProp']).toBe('text');
+        expect(mockSpan.attributes['laikatest.property.numProp']).toBe(42);
+        expect(mockSpan.attributes['laikatest.property.boolProp']).toBe(true);
       });
     });
 
@@ -107,7 +107,7 @@ describe('LaikaSpanProcessor', () => {
         const mockSpan = new MockSpan();
         processor.onStart(mockSpan as any, mockContext);
         // No properties should be set
-        const propKeys = Object.keys(mockSpan.attributes).filter(k => k.startsWith('laika.property.'));
+        const propKeys = Object.keys(mockSpan.attributes).filter(k => k.startsWith('laikatest.property.'));
         expect(propKeys.length).toBe(0);
       });
     });
@@ -141,8 +141,8 @@ describe('LaikaSpanProcessor - Experiment Context', () => {
   test('does not inject experiment attributes when client not installed', () => {
     const mockSpan = new MockSpan();
     processor.onStart(mockSpan as any, mockContext);
-    expect(mockSpan.attributes['laika.experiment.id']).toBeUndefined();
-    expect(mockSpan.attributes['laika.experiment.variant_id']).toBeUndefined();
+    expect(mockSpan.attributes['laikatest.experiment.id']).toBeUndefined();
+    expect(mockSpan.attributes['laikatest.experiment.variant_id']).toBeUndefined();
   });
 
   test('logs error for unexpected require errors', () => {

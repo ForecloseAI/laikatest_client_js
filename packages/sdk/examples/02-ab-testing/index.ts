@@ -6,7 +6,7 @@
  */
 
 import 'dotenv/config';
-import { Laika } from '@laikatest/sdk';
+import { LaikaTest } from '@laikatest/sdk';
 import OpenAI from 'openai';
 
 // Replace with your actual experiment title from LaikaTest dashboard
@@ -14,13 +14,13 @@ const EXPERIMENT_TITLE = 'demo-experiment';
 
 async function main() {
   // Initialize SDK with both tracing and experiments enabled
-  const laika = Laika.init({
+  const laika = LaikaTest.init({
     apiKey: process.env.LAIKA_API_KEY!,
     serviceName: 'ab-testing-demo',
     debug: true,
   });
 
-  console.log('Laika SDK initialized');
+  console.log('LaikaTest SDK initialized');
   console.log('Tracing enabled:', laika.isTracingEnabled());
   console.log('Experiments enabled:', laika.isExperimentsEnabled());
 

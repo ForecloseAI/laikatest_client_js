@@ -2,11 +2,11 @@
  * Unit tests for laika.ts - Unified SDK
  */
 
-import { Laika } from './laika';
+import { LaikaTest } from './laika';
 
 // Mock auto-otel
 jest.mock('@laikatest/auto-otel', () => ({
-  initLaika: jest.fn(),
+  initLaikaTest: jest.fn(),
   shutdown: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -19,21 +19,21 @@ jest.mock('@laikatest/js-client', () => ({
   })),
 }));
 
-import { initLaika, shutdown } from '@laikatest/auto-otel';
-import { LaikaTest } from '@laikatest/js-client';
+import { initLaikaTest, shutdown } from '@laikatest/auto-otel';
+import { LaikaTest as LaikaTestClient } from '@laikatest/js-client';
 
-describe('Laika.init', () => {
+describe('LaikaTest.init', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   test('initializes tracing by default', () => {
-    Laika.init({
+    LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
     });
 
-    expect(initLaika).toHaveBeenCalledWith(
+    expect(initLaikaTest).toHaveBeenCalledWith(
       expect.objectContaining({
         apiKey: 'test-key',
         serviceName: 'test-service',
@@ -42,43 +42,43 @@ describe('Laika.init', () => {
   });
 
   test('initializes experiments client by default', () => {
-    Laika.init({
+    LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
     });
 
-    expect(LaikaTest).toHaveBeenCalledWith('test-key', expect.any(Object));
+    expect(LaikaTestClient).toHaveBeenCalledWith('test-key', expect.any(Object));
   });
 
   test('does not initialize tracing when tracing: false', () => {
-    Laika.init({
+    LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       tracing: false,
     });
 
-    expect(initLaika).not.toHaveBeenCalled();
+    expect(initLaikaTest).not.toHaveBeenCalled();
   });
 
   test('does not initialize experiments when experiments: false', () => {
-    Laika.init({
+    LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       experiments: false,
     });
 
-    expect(LaikaTest).not.toHaveBeenCalled();
+    expect(LaikaTestClient).not.toHaveBeenCalled();
   });
 
   test('isTracingEnabled returns correct state', () => {
-    const instanceWithTracing = Laika.init({
+    const instanceWithTracing = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       experiments: false,
     });
     expect(instanceWithTracing.isTracingEnabled()).toBe(true);
 
-    const instanceWithoutTracing = Laika.init({
+    const instanceWithoutTracing = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       tracing: false,
@@ -87,14 +87,14 @@ describe('Laika.init', () => {
   });
 
   test('isExperimentsEnabled returns correct state', () => {
-    const instanceWithExperiments = Laika.init({
+    const instanceWithExperiments = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       tracing: false,
     });
     expect(instanceWithExperiments.isExperimentsEnabled()).toBe(true);
 
-    const instanceWithoutExperiments = Laika.init({
+    const instanceWithoutExperiments = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       experiments: false,
@@ -103,13 +103,13 @@ describe('Laika.init', () => {
   });
 });
 
-describe('Laika methods', () => {
+describe('LaikaTest methods', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   test('getPrompt throws when experiments disabled', async () => {
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       experiments: false,
@@ -121,7 +121,7 @@ describe('Laika methods', () => {
   });
 
   test('getExperimentPrompt throws when experiments disabled', async () => {
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       experiments: false,
@@ -133,7 +133,7 @@ describe('Laika methods', () => {
   });
 
   test('getPrompt works when experiments enabled', async () => {
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       tracing: false,
@@ -143,7 +143,7 @@ describe('Laika methods', () => {
   });
 
   test('getExperimentPrompt works when experiments enabled', async () => {
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       tracing: false,
@@ -153,13 +153,13 @@ describe('Laika methods', () => {
   });
 });
 
-describe('Laika.shutdown', () => {
+describe('LaikaTest.shutdown', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   test('shutdown works with tracing-only initialization', async () => {
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       experiments: false,
@@ -170,7 +170,7 @@ describe('Laika.shutdown', () => {
   });
 
   test('shutdown works with experiments-only initialization', async () => {
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
       tracing: false,
@@ -185,14 +185,14 @@ describe('Laika.shutdown', () => {
 
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-    const instance = Laika.init({
+    const instance = LaikaTest.init({
       apiKey: 'test-key',
       serviceName: 'test-service',
     });
 
     await expect(instance.shutdown()).resolves.not.toThrow();
     expect(consoleSpy).toHaveBeenCalledWith(
-      '[Laika] Errors during shutdown:',
+      '[LaikaTest] Errors during shutdown:',
       expect.any(Array)
     );
 

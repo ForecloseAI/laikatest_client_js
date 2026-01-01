@@ -1,5 +1,5 @@
 // Core initialization
-export { initLaika, shutdown } from './init';
+export { initLaikaTest, shutdown } from './init';
 export { LaikaConfig } from './types';
 
 // Session and user context (with AsyncLocalStorage support)

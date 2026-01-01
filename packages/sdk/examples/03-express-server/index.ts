@@ -7,19 +7,19 @@
 
 import 'dotenv/config';
 import express, { Request, Response, NextFunction } from 'express';
-import { Laika, setSessionId, setUserId, setProperty, clearSessionId, clearUserId, clearProperties } from '@laikatest/sdk';
+import { LaikaTest, setSessionId, setUserId, setProperty, clearSessionId, clearUserId, clearProperties } from '@laikatest/sdk';
 import OpenAI from 'openai';
 
 const PORT = process.env.PORT || 3000;
 
 // Initialize SDK at server startup
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: process.env.LAIKA_API_KEY!,
   serviceName: 'express-server-demo',
   debug: true,
 });
 
-console.log('Laika SDK initialized');
+console.log('LaikaTest SDK initialized');
 
 const app = express();
 app.use(express.json());

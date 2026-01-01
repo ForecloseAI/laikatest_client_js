@@ -15,9 +15,9 @@ const client = new LaikaTest('key');               // Same key again?
 
 **After** - single unified init:
 ```typescript
-import { Laika } from '@laikatest/sdk';
+import { LaikaTest } from '@laikatest/sdk';
 
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: 'key',
   serviceName: 'app',
 });
@@ -33,10 +33,10 @@ npm install @laikatest/sdk
 ## Quick Start
 
 ```typescript
-import { Laika, setSessionId } from '@laikatest/sdk';
+import { LaikaTest, setSessionId } from '@laikatest/sdk';
 
 // Initialize once - enables both tracing and experiments
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'my-app',
 });
@@ -103,14 +103,14 @@ Enable only what you need:
 
 ```typescript
 // Tracing only (observability without experiments)
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: 'key',
   serviceName: 'app',
   experiments: false,
 });
 
 // Experiments only (A/B testing without tracing)
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: 'key',
   serviceName: 'app',
   tracing: false,
@@ -157,11 +157,11 @@ setProperties({
 
 ## API Reference
 
-### Laika Class
+### LaikaTest Class
 
 | Method | Description |
 |--------|-------------|
-| `Laika.init(config)` | Initialize SDK (static factory) |
+| `LaikaTest.init(config)` | Initialize SDK (static factory) |
 | `laika.getPrompt(name, options?)` | Fetch prompt by name |
 | `laika.getExperimentPrompt(title, context?)` | Get A/B tested prompt |
 | `laika.shutdown()` | Cleanup resources |
@@ -197,9 +197,9 @@ import type {
 ### Multi-Turn Chatbot
 
 ```typescript
-import { Laika, setSessionId, setUserId } from '@laikatest/sdk';
+import { LaikaTest, setSessionId, setUserId } from '@laikatest/sdk';
 
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'chatbot',
 });
@@ -228,9 +228,9 @@ async function handleMessage(userId: string, conversationId: string, message: st
 ### Express.js Middleware
 
 ```typescript
-import { Laika, setSessionId, setUserId, setProperty } from '@laikatest/sdk';
+import { LaikaTest, setSessionId, setUserId, setProperty } from '@laikatest/sdk';
 
-const laika = Laika.init({
+const laika = LaikaTest.init({
   apiKey: process.env.LAIKA_API_KEY,
   serviceName: 'api-server',
 });
@@ -266,9 +266,9 @@ const prompt = await client.getExperimentPrompt('exp', { userId: 'u1' });
 ### After (Unified SDK)
 
 ```typescript
-import { Laika, setSessionId } from '@laikatest/sdk';
+import { LaikaTest, setSessionId } from '@laikatest/sdk';
 
-const laika = Laika.init({ apiKey: 'key', serviceName: 'app' });
+const laika = LaikaTest.init({ apiKey: 'key', serviceName: 'app' });
 
 setSessionId('conv-123');
 const prompt = await laika.getExperimentPrompt('exp', { userId: 'u1' });

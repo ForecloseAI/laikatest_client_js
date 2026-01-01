@@ -4,6 +4,7 @@ import { Resource, resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { LaikaConfig } from './types';
 import { LaikaSpanProcessor } from './laikaSpanProcessor';
@@ -13,7 +14,7 @@ import { setProperties } from './properties';
 const DEFAULT_ENDPOINT = 'https://api.laikatest.com/otel/v1/traces';
 let sdk: NodeSDK | null = null;
 
-// Creates OTLP exporter configured for Laika endpoint
+// Creates OTLP exporter configured for LaikaTest endpoint
 function createExporter(config: LaikaConfig): OTLPTraceExporter {
   const endpoint = config.endpoint || DEFAULT_ENDPOINT;
   return new OTLPTraceExporter({
@@ -102,7 +103,7 @@ function initializeContext(config: LaikaConfig): void {
 }
 
 // Initializes LaikaTest OpenTelemetry SDK with tracing and HTTP instrumentation
-export function initLaika(config: LaikaConfig): void {
+export function initLaikaTest(config: LaikaConfig): void {
   if (sdk) {
     console.warn('[LaikaTest] Already initialized, skipping');
     return;
@@ -117,11 +118,15 @@ export function initLaika(config: LaikaConfig): void {
   // Initialize context from config
   initializeContext(config);
 
+  const exporter = createExporter(config);
+
   sdk = new NodeSDK({
     resource: createResource(config.serviceName),
-    traceExporter: createExporter(config),
     instrumentations: createInstrumentations(config),
-    spanProcessors: [new LaikaSpanProcessor()]
+    spanProcessors: [
+      new LaikaSpanProcessor(),
+      new BatchSpanProcessor(exporter)
+    ]
   });
 
   try {
