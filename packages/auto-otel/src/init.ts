@@ -4,6 +4,7 @@ import { Resource, resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
+import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { LaikaConfig } from './types';
 import { LaikaSpanProcessor } from './laikaSpanProcessor';
@@ -117,11 +118,15 @@ export function initLaikaTest(config: LaikaConfig): void {
   // Initialize context from config
   initializeContext(config);
 
+  const exporter = createExporter(config);
+
   sdk = new NodeSDK({
     resource: createResource(config.serviceName),
-    traceExporter: createExporter(config),
     instrumentations: createInstrumentations(config),
-    spanProcessors: [new LaikaSpanProcessor()]
+    spanProcessors: [
+      new LaikaSpanProcessor(),
+      new BatchSpanProcessor(exporter)
+    ]
   });
 
   try {
