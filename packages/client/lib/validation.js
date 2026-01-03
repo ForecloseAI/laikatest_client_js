@@ -58,9 +58,9 @@ function validateScoreItem(scoreItem, index) {
   }
 
   // Validate 'type' field
-  const validTypes = ['int', 'bool', 'string'];
+  const validTypes = ['int', 'float', 'bool', 'string'];
   if (!validTypes.includes(scoreItem.type)) {
-    throw new ValidationError(`Score item at index ${index} must have a 'type' field ('int', 'bool', or 'string')`);
+    throw new ValidationError(`Score item at index ${index} must have a 'type' field ('int', 'float', 'bool', or 'string')`);
   }
 
   // Validate 'value' field matches type
@@ -71,6 +71,9 @@ function validateScoreItem(scoreItem, index) {
   // Type-specific validation
   if (scoreItem.type === 'int' && typeof scoreItem.value !== 'number') {
     throw new ValidationError(`Score item at index ${index} has type 'int' but value is not a number`);
+  }
+  if (scoreItem.type === 'float' && typeof scoreItem.value !== 'number') {
+    throw new ValidationError(`Score item at index ${index} has type 'float' but value is not a number`);
   }
   if (scoreItem.type === 'bool' && typeof scoreItem.value !== 'boolean') {
     throw new ValidationError(`Score item at index ${index} has type 'bool' but value is not a boolean`);
