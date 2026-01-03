@@ -13,10 +13,9 @@ import { LaikaTest } from '@laikatest/sdk';
 const EXPERIMENT_TITLE = 'demo-experiment';
 
 async function main() {
-  // Initialize SDK FIRST - before importing OpenAI
+  // Initialize with just your API key - everything else is auto-detected
   const laika = LaikaTest.init({
     apiKey: process.env.LAIKA_API_KEY!,
-    serviceName: 'ab-testing-demo',
     debug: true,
   });
 

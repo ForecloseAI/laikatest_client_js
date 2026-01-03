@@ -12,10 +12,9 @@ import { LaikaTest, setSessionId, setUserId, setProperty, clearSessionId, clearU
 
 const PORT = process.env.PORT || 3000;
 
-// Initialize SDK at server startup
+// Initialize with just your API key - everything else is auto-detected
 const laika = LaikaTest.init({
   apiKey: process.env.LAIKA_API_KEY!,
-  serviceName: 'express-server-demo',
   debug: true,
 });
 

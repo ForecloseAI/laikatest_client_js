@@ -10,9 +10,58 @@ import { LaikaConfig } from './types';
 import { LaikaSpanProcessor } from './laikaSpanProcessor';
 import { setSessionId, setUserId } from './context';
 import { setProperties } from './properties';
+import * as path from 'path';
+import * as fs from 'fs';
 
 const DEFAULT_ENDPOINT = 'https://api.laikatest.com/otel/v1/traces';
 let sdk: NodeSDK | null = null;
+
+/**
+ * Auto-detects service name from package.json or directory name
+ */
+function autoDetectServiceName(): string {
+  try {
+    // Try reading package.json from current working directory
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+      if (packageJson.name) {
+        return packageJson.name;
+      }
+    }
+  } catch (error) {
+    // Fallback if reading fails
+  }
+
+  // Fallback: use directory name
+  return path.basename(process.cwd());
+}
+
+/**
+ * Auto-detects default properties (environment, version)
+ */
+function autoDetectDefaultProperties(): Record<string, string> {
+  const props: Record<string, string> = {};
+
+  // Auto-detect environment from NODE_ENV
+  const environment = process.env.NODE_ENV || 'development';
+  props.environment = environment;
+
+  // Try to get version from package.json
+  try {
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+      if (packageJson.version) {
+        props.version = packageJson.version;
+      }
+    }
+  } catch (error) {
+    // Ignore if version detection fails
+  }
+
+  return props;
+}
 
 // Creates OTLP exporter configured for LaikaTest endpoint
 function createExporter(config: LaikaConfig): OTLPTraceExporter {
@@ -23,9 +72,10 @@ function createExporter(config: LaikaConfig): OTLPTraceExporter {
   });
 }
 
-// Creates resource with service name attribute
-function createResource(serviceName: string): Resource {
-  return resourceFromAttributes({ [ATTR_SERVICE_NAME]: serviceName });
+// Creates resource with service name attribute (auto-detects if not provided)
+function createResource(serviceName?: string): Resource {
+  const actualServiceName = serviceName || autoDetectServiceName();
+  return resourceFromAttributes({ [ATTR_SERVICE_NAME]: actualServiceName });
 }
 
 // Creates instrumentations array based on config
@@ -72,9 +122,7 @@ function validateConfig(config: LaikaConfig): void {
   if (!config.apiKey || typeof config.apiKey !== 'string') {
     throw new Error('[LaikaTest] apiKey is required and must be a non-empty string');
   }
-  if (!config.serviceName || typeof config.serviceName !== 'string') {
-    throw new Error('[LaikaTest] serviceName is required and must be a non-empty string');
-  }
+  // serviceName is now optional - will be auto-detected if not provided
 }
 
 // Enables OpenTelemetry diagnostic logging
@@ -96,9 +144,16 @@ function initializeContext(config: LaikaConfig): void {
     setUserId(userId);
   }
 
-  // Set default properties from config
-  if (config.defaultProperties) {
-    setProperties(config.defaultProperties);
+  // Auto-detect and merge default properties
+  const autoDetectedProps = autoDetectDefaultProperties();
+  const mergedProps = {
+    ...autoDetectedProps,
+    ...(config.defaultProperties || {}),
+  };
+
+  // Set merged properties
+  if (Object.keys(mergedProps).length > 0) {
+    setProperties(mergedProps);
   }
 }
 
@@ -115,13 +170,20 @@ export function initLaikaTest(config: LaikaConfig): void {
     enableDebugLogging();
   }
 
+  // Auto-detect service name if not provided
+  const serviceName = config.serviceName || autoDetectServiceName();
+
+  if (config.debug && !config.serviceName) {
+    console.log(`[LaikaTest] Auto-detected service name: ${serviceName}`);
+  }
+
   // Initialize context from config
   initializeContext(config);
 
   const exporter = createExporter(config);
 
   sdk = new NodeSDK({
-    resource: createResource(config.serviceName),
+    resource: createResource(serviceName),
     instrumentations: createInstrumentations(config),
     spanProcessors: [
       new LaikaSpanProcessor(),

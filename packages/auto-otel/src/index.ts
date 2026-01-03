@@ -24,3 +24,11 @@ export {
   runWithProperties,
   runWithPropertiesAsync
 } from './properties';
+
+// Manual tracing APIs
+export {
+  withSpan,
+  withSpanSync,
+  startSpan,
+  getActiveSpan
+} from './manualTracing';
