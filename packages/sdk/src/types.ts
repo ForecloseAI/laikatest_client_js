@@ -6,8 +6,13 @@ export interface LaikaConfig {
   /** API key for Laika authentication (required) */
   apiKey: string;
 
-  /** Service name for resource identification (required) */
-  serviceName: string;
+  /**
+   * Service name for resource identification.
+   * If not provided, auto-detects from:
+   * 1. package.json "name" field
+   * 2. Current directory name (fallback)
+   */
+  serviceName?: string;
 
   // Feature toggles
   /** Enable OpenTelemetry tracing. Default: true */
