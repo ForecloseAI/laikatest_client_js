@@ -62,7 +62,7 @@ function autoDetectDefaultProperties(): Record<string, string> {
   return props;
 }
 
-// Creates OTLP exporter configured for LaikaTest endpoint
+// Creates OTLP HTTP exporter with authentication header for LaikaTest backend
 function createExporter(config: LaikaConfig): OTLPTraceExporter {
   const endpoint = config.endpoint || DEFAULT_ENDPOINT;
   return new OTLPTraceExporter({
@@ -71,7 +71,11 @@ function createExporter(config: LaikaConfig): OTLPTraceExporter {
   });
 }
 
-// Creates resource with service name attribute (auto-detects if not provided)
+/**
+ * Creates resource with service name attribute.
+ * If serviceName not provided, auto-detects from package.json name field
+ * or falls back to directory name.
+ */
 function createResource(serviceName?: string): Resource {
   const actualServiceName = serviceName || autoDetectServiceName();
   return resourceFromAttributes({ [ATTR_SERVICE_NAME]: actualServiceName });
@@ -116,12 +120,21 @@ function setupShutdown(): void {
   process.on('SIGINT', shutdownHandler);
 }
 
-// Validates required configuration fields
+// Validates required configuration fields and mutual exclusivity constraints
 function validateConfig(config: LaikaConfig): void {
   if (!config.apiKey || typeof config.apiKey !== 'string') {
     throw new Error('[LaikaTest] apiKey is required and must be a non-empty string');
   }
-  // serviceName is now optional - will be auto-detected if not provided
+
+  // Validate mutual exclusivity of session ID options
+  if (config.sessionId && config.getSessionId) {
+    throw new Error('[LaikaTest] Cannot provide both sessionId and getSessionId - use one or the other');
+  }
+
+  // Validate mutual exclusivity of user ID options
+  if (config.userId && config.getUserId) {
+    throw new Error('[LaikaTest] Cannot provide both userId and getUserId - use one or the other');
+  }
 }
 
 // Enables OpenTelemetry diagnostic logging

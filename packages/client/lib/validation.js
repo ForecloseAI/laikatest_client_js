@@ -147,11 +147,64 @@ function validateSessionOrUserId(options) {
   // Both IDs are now allowed - no mutual exclusivity check
 }
 
+// Validate client options for value ranges and formats
+function validateClientOptions(options) {
+  if (!options || typeof options !== 'object') {
+    return; // Options are optional
+  }
+
+  // Validate baseUrl is a valid URL if provided
+  if (options.baseUrl !== undefined) {
+    if (typeof options.baseUrl !== 'string') {
+      throw new ValidationError('baseUrl must be a string');
+    }
+    try {
+      new URL(options.baseUrl);
+    } catch (error) {
+      throw new ValidationError('baseUrl must be a valid URL');
+    }
+  }
+
+  // Validate timeout is a positive number
+  if (options.timeout !== undefined) {
+    if (typeof options.timeout !== 'number') {
+      throw new ValidationError('timeout must be a number');
+    }
+    if (options.timeout <= 0) {
+      throw new ValidationError('timeout must be positive');
+    }
+    if (!Number.isFinite(options.timeout)) {
+      throw new ValidationError('timeout must be finite');
+    }
+  }
+
+  // Validate cacheTTL is a positive number
+  if (options.cacheTTL !== undefined) {
+    if (typeof options.cacheTTL !== 'number') {
+      throw new ValidationError('cacheTTL must be a number');
+    }
+    if (options.cacheTTL <= 0) {
+      throw new ValidationError('cacheTTL must be positive');
+    }
+    if (!Number.isFinite(options.cacheTTL)) {
+      throw new ValidationError('cacheTTL must be finite');
+    }
+  }
+
+  // Validate cacheEnabled is a boolean
+  if (options.cacheEnabled !== undefined) {
+    if (typeof options.cacheEnabled !== 'boolean') {
+      throw new ValidationError('cacheEnabled must be a boolean');
+    }
+  }
+}
+
 module.exports = {
   validateApiKey,
   validatePromptName,
   validateVersionId,
   validateExperimentTitle,
   validateScores,
-  validateSessionOrUserId
+  validateSessionOrUserId,
+  validateClientOptions
 };

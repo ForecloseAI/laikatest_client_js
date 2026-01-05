@@ -3,7 +3,7 @@
 
 const { PromptCache } = require('./lib/cache');
 const { fetchPrompt } = require('./lib/prompt_utils');
-const { validateApiKey, validatePromptName, validateVersionId, validateExperimentTitle, validateScores, validateSessionOrUserId } = require('./lib/validation');
+const { validateApiKey, validatePromptName, validateVersionId, validateExperimentTitle, validateScores, validateSessionOrUserId, validateClientOptions } = require('./lib/validation');
 const { Prompt } = require('./lib/prompt');
 const { evaluateExperiment } = require('./lib/experiment');
 const { pushScore: pushScoreUtil } = require('./lib/score_utils');
@@ -29,9 +29,10 @@ function clearCurrentExperiment() {
 
 // Main LaikaTest client class
 class LaikaTest {
-  // Initialize client with API key 
+  // Initialize client with API key
   constructor(apiKey, options = {}) {
     validateApiKey(apiKey);
+    validateClientOptions(options);
 
     this.apiKey = apiKey;
     this.baseUrl = options.baseUrl || 'https://api.laikatest.com';
