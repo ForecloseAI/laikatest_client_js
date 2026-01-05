@@ -126,6 +126,11 @@ function validateConfig(config: LaikaConfig): void {
     throw new Error('[LaikaTest] apiKey is required and must be a non-empty string');
   }
 
+  if (config.serviceName !== undefined &&
+      (typeof config.serviceName !== 'string' || config.serviceName === '')) {
+    throw new Error('[LaikaTest] serviceName is required and must be a non-empty string');
+  }
+
   // Validate mutual exclusivity of session ID options
   if (config.sessionId && config.getSessionId) {
     throw new Error('[LaikaTest] Cannot provide both sessionId and getSessionId - use one or the other');
