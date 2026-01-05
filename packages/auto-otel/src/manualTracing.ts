@@ -1,4 +1,4 @@
-import { trace, Span, SpanStatusCode, Context } from '@opentelemetry/api';
+import { trace, context, Span, SpanStatusCode, Context } from '@opentelemetry/api';
 
 const TRACER_NAME = 'laikatest';
 
@@ -23,7 +23,18 @@ export async function withSpan<T>(
         code: SpanStatusCode.ERROR,
         message: error instanceof Error ? error.message : String(error)
       });
-      span.recordException(error as Error);
+
+      // Only record as exception if it's actually an Error
+      if (error instanceof Error) {
+        span.recordException(error);
+      } else {
+        // For non-Error values, add as event with context
+        span.addEvent('exception', {
+          'exception.type': typeof error,
+          'exception.message': String(error),
+        });
+      }
+
       throw error;
     } finally {
       span.end();
@@ -33,6 +44,7 @@ export async function withSpan<T>(
 
 /**
  * Execute sync function within a span (auto-closes)
+ * The span is made active in the context, so nested spans will be its children
  * @param name - Span name
  * @param fn - Sync callback function
  * @returns Callback result
@@ -43,20 +55,35 @@ export function withSpanSync<T>(
 ): T {
   const tracer = trace.getTracer(TRACER_NAME);
   const span = tracer.startSpan(name);
-  try {
-    const result = fn(span);
-    span.setStatus({ code: SpanStatusCode.OK });
-    return result;
-  } catch (error) {
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error instanceof Error ? error.message : String(error)
-    });
-    span.recordException(error as Error);
-    throw error;
-  } finally {
-    span.end();
-  }
+
+  // Make span active in context for proper parent-child relationships
+  return context.with(trace.setSpan(context.active(), span), () => {
+    try {
+      const result = fn(span);
+      span.setStatus({ code: SpanStatusCode.OK });
+      return result;
+    } catch (error) {
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error instanceof Error ? error.message : String(error)
+      });
+
+      // Only record as exception if it's actually an Error
+      if (error instanceof Error) {
+        span.recordException(error);
+      } else {
+        // For non-Error values, add as event with context
+        span.addEvent('exception', {
+          'exception.type': typeof error,
+          'exception.message': String(error),
+        });
+      }
+
+      throw error;
+    } finally {
+      span.end();
+    }
+  });
 }
 
 /**

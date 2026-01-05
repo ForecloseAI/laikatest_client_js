@@ -17,28 +17,30 @@ const DEFAULT_ENDPOINT = 'https://api.laikatest.com/otel/v1/traces';
 let sdk: NodeSDK | null = null;
 
 /**
- * Auto-detects service name from package.json or directory name
+ * Reads and parses package.json from current working directory
+ * Returns null if file doesn't exist or parsing fails
  */
-function autoDetectServiceName(): string {
+function getPackageJson(): { name?: string; version?: string } | null {
   try {
-    // Try reading package.json from current working directory
     const packageJsonPath = path.join(process.cwd(), 'package.json');
     if (fs.existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-      if (packageJson.name) {
-        return packageJson.name;
-      }
+      return JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
     }
   } catch (error) {
-    // Fallback if reading fails
     console.warn(
-      '[LaikaTest] Failed to auto-detect service name from package.json:',
+      '[LaikaTest] Failed to read package.json:',
       error instanceof Error ? error.message : String(error)
     );
   }
+  return null;
+}
 
-  // Fallback: use directory name
-  return path.basename(process.cwd());
+/**
+ * Auto-detects service name from package.json or directory name
+ */
+function autoDetectServiceName(): string {
+  const pkg = getPackageJson();
+  return pkg?.name || path.basename(process.cwd());
 }
 
 /**
@@ -52,20 +54,9 @@ function autoDetectDefaultProperties(): Record<string, string> {
   props.environment = environment;
 
   // Try to get version from package.json
-  try {
-    const packageJsonPath = path.join(process.cwd(), 'package.json');
-    if (fs.existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-      if (packageJson.version) {
-        props.version = packageJson.version;
-      }
-    }
-  } catch (error) {
-    // Ignore if version detection fails
-    console.warn(
-      '[LaikaTest] Failed to auto-detect version from package.json:',
-      error instanceof Error ? error.message : String(error)
-    );
+  const pkg = getPackageJson();
+  if (pkg?.version) {
+    props.version = pkg.version;
   }
 
   return props;
@@ -185,9 +176,6 @@ export function initLaikaTest(config: LaikaConfig): void {
     console.log(`[LaikaTest] Auto-detected service name: ${serviceName}`);
   }
 
-  // Initialize context from config
-  initializeContext(config);
-
   const exporter = createExporter(config);
 
   sdk = new NodeSDK({
@@ -201,6 +189,10 @@ export function initLaikaTest(config: LaikaConfig): void {
 
   try {
     sdk.start();
+
+    // Initialize context only after successful SDK start
+    initializeContext(config);
+
     setupShutdown();
     console.log('[LaikaTest] OpenTelemetry initialized');
   } catch (error) {
