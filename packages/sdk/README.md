@@ -4,24 +4,15 @@ Unified LaikaTest SDK for tracing and A/B testing. Single initialization for bot
 
 ## Why This Package?
 
-**Before** - confusing dual initialization:
-```typescript
-import { initLaika } from '@laikatest/auto-otel';
-import { LaikaTest } from '@laikatest/js-client';
+The SDK provides a single, unified initialization for both tracing and A/B testing. No need to manage separate packages or duplicate configuration - one init call enables everything you need.
 
-initLaika({ apiKey: 'key', serviceName: 'app' });  // Tracing
-const client = new LaikaTest('key');               // Same key again?
-```
-
-**After** - single unified init:
 ```typescript
 import { LaikaTest } from '@laikatest/sdk';
 
 const laika = LaikaTest.init({
-  apiKey: 'key',
-  serviceName: 'app',
+  apiKey: 'your-api-key',
 });
-// Both tracing AND experiments enabled by default
+// Both tracing and experiments enabled automatically
 ```
 
 ## Installation
@@ -35,10 +26,9 @@ npm install @laikatest/sdk
 ```typescript
 import { LaikaTest, setSessionId } from '@laikatest/sdk';
 
-// Initialize once - enables both tracing and experiments
+// Initialize with just your API key - everything else is auto-detected
 const laika = LaikaTest.init({
   apiKey: process.env.LAIKA_API_KEY,
-  serviceName: 'my-app',
 });
 
 // Set context for multi-turn conversations
@@ -71,7 +61,9 @@ await laika.shutdown();
 interface LaikaConfig {
   // Required
   apiKey: string;        // Your LaikaTest API key
-  serviceName: string;   // Service name for traces
+
+  // Optional (smart defaults)
+  serviceName?: string;  // Service name (auto-detected from package.json or directory name)
 
   // Feature toggles (both default: true)
   tracing?: boolean;     // Enable OpenTelemetry tracing
@@ -97,6 +89,15 @@ interface LaikaConfig {
 }
 ```
 
+### Auto-Detection
+
+The SDK automatically detects:
+- **Service Name**: From `package.json` name field, or directory name as fallback
+- **Environment**: From `NODE_ENV` environment variable (defaults to 'development')
+- **Version**: From `package.json` version field
+
+These are set as default properties and propagated to traces through the context system, making them available for filtering and analytics.
+
 ## Feature Toggles
 
 Enable only what you need:
@@ -105,14 +106,12 @@ Enable only what you need:
 // Tracing only (observability without experiments)
 const laika = LaikaTest.init({
   apiKey: 'key',
-  serviceName: 'app',
   experiments: false,
 });
 
 // Experiments only (A/B testing without tracing)
 const laika = LaikaTest.init({
   apiKey: 'key',
-  serviceName: 'app',
   tracing: false,
 });
 
@@ -154,6 +153,136 @@ setProperties({
   tier: 'enterprise',
 });
 ```
+
+## AI-Native Tracing
+
+The SDK provides semantic helpers for common AI workflows like RAG pipelines and agent systems. These helpers automatically create properly-named spans with semantic attributes.
+
+### RAG Pipeline Example
+
+```typescript
+import { trace } from '@laikatest/sdk';
+
+const answer = await trace.rag('customer-qa', async () => {
+  // Step 1: Retrieve documents
+  const docs = await trace.retrieval('search', async () => {
+    return await vectorDB.search(query);
+  });
+
+  // Step 2: Rerank for relevance
+  const reranked = await trace.rerank('scoring', async () => {
+    return await reranker.rerank(docs, query);
+  });
+
+  // Step 3: Generate answer
+  const answer = await trace.generation('answer', async () => {
+    return await llm.generate(reranked, query);
+  });
+
+  return answer;
+});
+```
+
+### Agent Workflow Example
+
+```typescript
+import { trace } from '@laikatest/sdk';
+
+await trace.agent('research-agent', async () => {
+  // Plan the next action
+  const plan = await trace.step('planning', async () => {
+    return await planNextAction(query);
+  });
+
+  // Execute tool
+  const results = await trace.tool('web-search', async () => {
+    return await searchTool.run(plan.query);
+  });
+
+  // Analyze results
+  return await trace.step('analysis', async () => {
+    return await analyzeResults(results);
+  });
+});
+```
+
+### Available Helpers
+
+**RAG Workflow:**
+```typescript
+trace.rag(name, fn)         // RAG pipeline wrapper
+trace.retrieval(name, fn)   // Document retrieval
+trace.rerank(name, fn)      // Document reranking
+trace.embedding(name, fn)   // Embedding generation
+```
+
+**Agent Workflow:**
+```typescript
+trace.agent(name, fn)       // Agent wrapper
+trace.tool(name, fn)        // Tool execution
+trace.step(name, fn)        // Generic step
+```
+
+**LLM Operations:**
+```typescript
+trace.generation(name, fn)  // LLM generation
+trace.evaluation(name, fn)  // Evaluation
+```
+
+### Complete Example
+
+```typescript
+import { trace } from '@laikatest/sdk';
+
+// RAG Pipeline
+const answer = await trace.rag('support-qa', async () => {
+  // Step 1: Retrieve documents
+  const docs = await trace.retrieval('knowledge-base', async () => {
+    return await vectorDB.query(userQuestion, { topK: 5 });
+  });
+
+  // Step 2: Rerank for relevance
+  const reranked = await trace.rerank('relevance', async () => {
+    return await reranker.rerank(docs, userQuestion);
+  });
+
+  // Step 3: Generate answer
+  const answer = await trace.generation('answer', async () => {
+    return await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: buildPrompt(reranked, userQuestion)
+    });
+  });
+
+  return answer;
+});
+
+// Agent Workflow
+await trace.agent('research-agent', async () => {
+  const plan = await trace.step('planning', async () => {
+    return await planNextAction(query);
+  });
+
+  const results = await trace.tool('web-search', async () => {
+    return await searchTool.run(plan.query);
+  });
+
+  return await trace.step('analysis', async () => {
+    return await analyzeResults(results);
+  });
+});
+```
+
+### Span Naming
+
+All helpers automatically create semantic span names:
+- `trace.rag('customer-qa')` → Span: `rag.customer-qa`
+- `trace.retrieval('search')` → Span: `retrieval.search`
+- `trace.tool('web-search')` → Span: `tool.web-search`
+
+Each span also includes:
+- `laikatest.operation.type` - The operation type (rag, agent, tool, etc.)
+- `laikatest.operation.name` - The user-provided name
 
 ## API Reference
 
@@ -250,20 +379,7 @@ app.use((req, res, next) => {
 
 ## Migration from Separate Packages
 
-### Before (Two Packages)
-
-```typescript
-import { initLaika, setSessionId } from '@laikatest/auto-otel';
-import { LaikaTest } from '@laikatest/js-client';
-
-initLaika({ apiKey: 'key', serviceName: 'app' });
-const client = new LaikaTest('key');
-
-setSessionId('conv-123');
-const prompt = await client.getExperimentPrompt('exp', { userId: 'u1' });
-```
-
-### After (Unified SDK)
+If you're currently using `@laikatest/auto-otel` and `@laikatest/js-client` separately, you can migrate to the unified SDK:
 
 ```typescript
 import { LaikaTest, setSessionId } from '@laikatest/sdk';

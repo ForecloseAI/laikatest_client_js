@@ -10,11 +10,59 @@ import { LaikaConfig } from './types';
 import { LaikaSpanProcessor } from './laikaSpanProcessor';
 import { setSessionId, setUserId } from './context';
 import { setProperties } from './properties';
+import * as path from 'path';
+import * as fs from 'fs';
 
 const DEFAULT_ENDPOINT = 'https://api.laikatest.com/otel/v1/traces';
 let sdk: NodeSDK | null = null;
 
-// Creates OTLP exporter configured for LaikaTest endpoint
+/**
+ * Reads and parses package.json from current working directory
+ * Returns null if file doesn't exist or parsing fails
+ */
+function getPackageJson(): { name?: string; version?: string } | null {
+  try {
+    const packageJsonPath = path.join(process.cwd(), 'package.json');
+    if (fs.existsSync(packageJsonPath)) {
+      return JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    }
+  } catch (error) {
+    console.warn(
+      '[LaikaTest] Failed to read package.json:',
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+  return null;
+}
+
+/**
+ * Auto-detects service name from package.json or directory name
+ */
+function autoDetectServiceName(): string {
+  const pkg = getPackageJson();
+  return pkg?.name || path.basename(process.cwd());
+}
+
+/**
+ * Auto-detects default properties (environment, version)
+ */
+function autoDetectDefaultProperties(): Record<string, string> {
+  const props: Record<string, string> = {};
+
+  // Auto-detect environment from NODE_ENV
+  const environment = process.env.NODE_ENV || 'development';
+  props.environment = environment;
+
+  // Try to get version from package.json
+  const pkg = getPackageJson();
+  if (pkg?.version) {
+    props.version = pkg.version;
+  }
+
+  return props;
+}
+
+// Creates OTLP HTTP exporter with authentication header for LaikaTest backend
 function createExporter(config: LaikaConfig): OTLPTraceExporter {
   const endpoint = config.endpoint || DEFAULT_ENDPOINT;
   return new OTLPTraceExporter({
@@ -23,9 +71,14 @@ function createExporter(config: LaikaConfig): OTLPTraceExporter {
   });
 }
 
-// Creates resource with service name attribute
-function createResource(serviceName: string): Resource {
-  return resourceFromAttributes({ [ATTR_SERVICE_NAME]: serviceName });
+/**
+ * Creates resource with service name attribute.
+ * If serviceName not provided, auto-detects from package.json name field
+ * or falls back to directory name.
+ */
+function createResource(serviceName?: string): Resource {
+  const actualServiceName = serviceName || autoDetectServiceName();
+  return resourceFromAttributes({ [ATTR_SERVICE_NAME]: actualServiceName });
 }
 
 // Creates instrumentations array based on config
@@ -67,13 +120,25 @@ function setupShutdown(): void {
   process.on('SIGINT', shutdownHandler);
 }
 
-// Validates required configuration fields
+// Validates required configuration fields and mutual exclusivity constraints
 function validateConfig(config: LaikaConfig): void {
   if (!config.apiKey || typeof config.apiKey !== 'string') {
     throw new Error('[LaikaTest] apiKey is required and must be a non-empty string');
   }
-  if (!config.serviceName || typeof config.serviceName !== 'string') {
+
+  if (config.serviceName !== undefined &&
+      (typeof config.serviceName !== 'string' || config.serviceName === '')) {
     throw new Error('[LaikaTest] serviceName is required and must be a non-empty string');
+  }
+
+  // Validate mutual exclusivity of session ID options
+  if (config.sessionId && config.getSessionId) {
+    throw new Error('[LaikaTest] Cannot provide both sessionId and getSessionId - use one or the other');
+  }
+
+  // Validate mutual exclusivity of user ID options
+  if (config.userId && config.getUserId) {
+    throw new Error('[LaikaTest] Cannot provide both userId and getUserId - use one or the other');
   }
 }
 
@@ -96,9 +161,16 @@ function initializeContext(config: LaikaConfig): void {
     setUserId(userId);
   }
 
-  // Set default properties from config
-  if (config.defaultProperties) {
-    setProperties(config.defaultProperties);
+  // Auto-detect and merge default properties
+  const autoDetectedProps = autoDetectDefaultProperties();
+  const mergedProps = {
+    ...autoDetectedProps,
+    ...(config.defaultProperties || {}),
+  };
+
+  // Set merged properties
+  if (Object.keys(mergedProps).length > 0) {
+    setProperties(mergedProps);
   }
 }
 
@@ -115,13 +187,17 @@ export function initLaikaTest(config: LaikaConfig): void {
     enableDebugLogging();
   }
 
-  // Initialize context from config
-  initializeContext(config);
+  // Auto-detect service name if not provided
+  const serviceName = config.serviceName || autoDetectServiceName();
+
+  if (config.debug && !config.serviceName) {
+    console.log(`[LaikaTest] Auto-detected service name: ${serviceName}`);
+  }
 
   const exporter = createExporter(config);
 
   sdk = new NodeSDK({
-    resource: createResource(config.serviceName),
+    resource: createResource(serviceName),
     instrumentations: createInstrumentations(config),
     spanProcessors: [
       new LaikaSpanProcessor(),
@@ -131,6 +207,10 @@ export function initLaikaTest(config: LaikaConfig): void {
 
   try {
     sdk.start();
+
+    // Initialize context only after successful SDK start
+    initializeContext(config);
+
     setupShutdown();
     console.log('[LaikaTest] OpenTelemetry initialized');
   } catch (error) {

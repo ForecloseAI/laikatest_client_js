@@ -7,7 +7,7 @@ export type PromptContent = string | Record<string, unknown> | Array<unknown>;
 /**
  * Score types supported by the scoring system
  */
-export type ScoreType = 'int' | 'bool' | 'string';
+export type ScoreType = 'int' | 'float' | 'bool' | 'string';
 
 /**
  * Score source (user or template)
@@ -20,6 +20,7 @@ export type ScoreSource = 'sdk' | 'ui';
  */
 export type ScoreInput =
   | { name: string; type: 'int'; value: number }
+  | { name: string; type: 'float'; value: number }
   | { name: string; type: 'bool'; value: boolean }
   | { name: string; type: 'string'; value: string };
 

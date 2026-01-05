@@ -58,9 +58,9 @@ function validateScoreItem(scoreItem, index) {
   }
 
   // Validate 'type' field
-  const validTypes = ['int', 'bool', 'string'];
+  const validTypes = ['int', 'float', 'bool', 'string'];
   if (!validTypes.includes(scoreItem.type)) {
-    throw new ValidationError(`Score item at index ${index} must have a 'type' field ('int', 'bool', or 'string')`);
+    throw new ValidationError(`Score item at index ${index} must have a 'type' field ('int', 'float', 'bool', or 'string')`);
   }
 
   // Validate 'value' field matches type
@@ -69,8 +69,24 @@ function validateScoreItem(scoreItem, index) {
   }
 
   // Type-specific validation
-  if (scoreItem.type === 'int' && typeof scoreItem.value !== 'number') {
-    throw new ValidationError(`Score item at index ${index} has type 'int' but value is not a number`);
+  if (scoreItem.type === 'int') {
+    if (typeof scoreItem.value !== 'number') {
+      throw new ValidationError(`Score item at index ${index} has type 'int' but value is not a number`);
+    }
+    if (!Number.isFinite(scoreItem.value)) {
+      throw new ValidationError(`Score item at index ${index} has type 'int' but value is not finite (NaN or Infinity)`);
+    }
+    if (!Number.isInteger(scoreItem.value)) {
+      throw new ValidationError(`Score item at index ${index} has type 'int' but value is not an integer`);
+    }
+  }
+  if (scoreItem.type === 'float') {
+    if (typeof scoreItem.value !== 'number') {
+      throw new ValidationError(`Score item at index ${index} has type 'float' but value is not a number`);
+    }
+    if (!Number.isFinite(scoreItem.value)) {
+      throw new ValidationError(`Score item at index ${index} has type 'float' but value is not finite (NaN or Infinity)`);
+    }
   }
   if (scoreItem.type === 'bool' && typeof scoreItem.value !== 'boolean') {
     throw new ValidationError(`Score item at index ${index} has type 'bool' but value is not a boolean`);
@@ -131,11 +147,64 @@ function validateSessionOrUserId(options) {
   // Both IDs are now allowed - no mutual exclusivity check
 }
 
+// Validate client options for value ranges and formats
+function validateClientOptions(options) {
+  if (!options || typeof options !== 'object') {
+    return; // Options are optional
+  }
+
+  // Validate baseUrl is a valid URL if provided
+  if (options.baseUrl !== undefined) {
+    if (typeof options.baseUrl !== 'string') {
+      throw new ValidationError('baseUrl must be a string');
+    }
+    try {
+      new URL(options.baseUrl);
+    } catch (error) {
+      throw new ValidationError('baseUrl must be a valid URL');
+    }
+  }
+
+  // Validate timeout is a positive number
+  if (options.timeout !== undefined) {
+    if (typeof options.timeout !== 'number') {
+      throw new ValidationError('timeout must be a number');
+    }
+    if (options.timeout <= 0) {
+      throw new ValidationError('timeout must be positive');
+    }
+    if (!Number.isFinite(options.timeout)) {
+      throw new ValidationError('timeout must be finite');
+    }
+  }
+
+  // Validate cacheTTL is a positive number
+  if (options.cacheTTL !== undefined) {
+    if (typeof options.cacheTTL !== 'number') {
+      throw new ValidationError('cacheTTL must be a number');
+    }
+    if (options.cacheTTL <= 0) {
+      throw new ValidationError('cacheTTL must be positive');
+    }
+    if (!Number.isFinite(options.cacheTTL)) {
+      throw new ValidationError('cacheTTL must be finite');
+    }
+  }
+
+  // Validate cacheEnabled is a boolean
+  if (options.cacheEnabled !== undefined) {
+    if (typeof options.cacheEnabled !== 'boolean') {
+      throw new ValidationError('cacheEnabled must be a boolean');
+    }
+  }
+}
+
 module.exports = {
   validateApiKey,
   validatePromptName,
   validateVersionId,
   validateExperimentTitle,
   validateScores,
-  validateSessionOrUserId
+  validateSessionOrUserId,
+  validateClientOptions
 };

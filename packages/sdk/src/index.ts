@@ -20,6 +20,8 @@ export {
   runWithProperties,
   runWithPropertiesAsync,
   shutdown,
+  withSpan,
+  withSpanSync,
 } from '@laikatest/auto-otel';
 
 // Re-export from client for convenience
@@ -42,3 +44,7 @@ export type {
   ClientOptions,
   GetPromptOptions,
 } from '@laikatest/js-client';
+
+// AI-native tracing API
+export { trace } from './trace';
+export type { TraceCallback, TraceSyncCallback, OperationType } from './trace';

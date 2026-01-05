@@ -4,7 +4,7 @@ Demonstrates automatic OpenTelemetry tracing for OpenAI calls using `@laikatest/
 
 ## What This Demo Shows
 
-- **SDK Initialization**: Single `Laika.init()` call sets up tracing
+- **Minimal SDK Initialization**: Just your API key needed - everything else auto-detected
 - **Automatic Tracing**: OpenAI calls are traced without code changes
 - **Context Injection**: Session ID, user ID, and custom properties appear in traces
 - **Clean Shutdown**: Proper resource cleanup with `laika.shutdown()`
@@ -43,9 +43,9 @@ Done! Check your LaikaTest dashboard for traces.
 
 ## View Traces
 
-1. Go to [LaikaTest Dashboard](https://app.laikatest.com)
+1. Go to [LaikaTest Dashboard](https://laikatest.com)
 2. Navigate to **Tracing** tab
-3. Find traces from service `basic-tracing-demo`
+3. Find traces from your service (auto-detected from package.json)
 
 You'll see:
 - Request/response details

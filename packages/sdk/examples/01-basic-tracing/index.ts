@@ -10,10 +10,9 @@ import { LaikaTest, setSessionId, setUserId, setProperty } from '@laikatest/sdk'
 // NOTE: OpenAI is imported dynamically AFTER SDK init for instrumentation to work
 
 async function main() {
-  // Initialize SDK FIRST - before importing OpenAI
+  // Initialize with just your API key - everything else is auto-detected
   const laika = LaikaTest.init({
     apiKey: process.env.LAIKA_API_KEY!,
-    serviceName: 'basic-tracing-demo',
     debug: true, // Enable debug logging to see what's happening
   });
 

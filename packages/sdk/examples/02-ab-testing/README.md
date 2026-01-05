@@ -13,7 +13,7 @@ Demonstrates experiment prompt fetching and score tracking using `@laikatest/sdk
 
 Before running this demo, create an experiment in LaikaTest:
 
-1. Go to [LaikaTest Dashboard](https://app.laikatest.com)
+1. Go to [LaikaTest Dashboard](https://laikatest.com)
 2. Create a new experiment titled `demo-experiment`
 3. Add at least 2 variants with different system prompts
 4. Start the experiment
