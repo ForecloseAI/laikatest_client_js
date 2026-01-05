@@ -69,11 +69,24 @@ function validateScoreItem(scoreItem, index) {
   }
 
   // Type-specific validation
-  if (scoreItem.type === 'int' && typeof scoreItem.value !== 'number') {
-    throw new ValidationError(`Score item at index ${index} has type 'int' but value is not a number`);
+  if (scoreItem.type === 'int') {
+    if (typeof scoreItem.value !== 'number') {
+      throw new ValidationError(`Score item at index ${index} has type 'int' but value is not a number`);
+    }
+    if (!Number.isFinite(scoreItem.value)) {
+      throw new ValidationError(`Score item at index ${index} has type 'int' but value is not finite (NaN or Infinity)`);
+    }
+    if (!Number.isInteger(scoreItem.value)) {
+      throw new ValidationError(`Score item at index ${index} has type 'int' but value is not an integer`);
+    }
   }
-  if (scoreItem.type === 'float' && typeof scoreItem.value !== 'number') {
-    throw new ValidationError(`Score item at index ${index} has type 'float' but value is not a number`);
+  if (scoreItem.type === 'float') {
+    if (typeof scoreItem.value !== 'number') {
+      throw new ValidationError(`Score item at index ${index} has type 'float' but value is not a number`);
+    }
+    if (!Number.isFinite(scoreItem.value)) {
+      throw new ValidationError(`Score item at index ${index} has type 'float' but value is not finite (NaN or Infinity)`);
+    }
   }
   if (scoreItem.type === 'bool' && typeof scoreItem.value !== 'boolean') {
     throw new ValidationError(`Score item at index ${index} has type 'bool' but value is not a boolean`);

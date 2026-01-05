@@ -96,7 +96,7 @@ The SDK automatically detects:
 - **Environment**: From `NODE_ENV` environment variable (defaults to 'development')
 - **Version**: From `package.json` version field
 
-These are automatically added to all spans as attributes for filtering and analytics.
+These are set as default properties and propagated to traces through the context system, making them available for filtering and analytics.
 
 ## Feature Toggles
 

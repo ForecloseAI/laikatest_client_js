@@ -31,6 +31,10 @@ function autoDetectServiceName(): string {
     }
   } catch (error) {
     // Fallback if reading fails
+    console.warn(
+      '[LaikaTest] Failed to auto-detect service name from package.json:',
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   // Fallback: use directory name
@@ -58,6 +62,10 @@ function autoDetectDefaultProperties(): Record<string, string> {
     }
   } catch (error) {
     // Ignore if version detection fails
+    console.warn(
+      '[LaikaTest] Failed to auto-detect version from package.json:',
+      error instanceof Error ? error.message : String(error)
+    );
   }
 
   return props;
