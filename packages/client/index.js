@@ -79,7 +79,8 @@ class LaikaTest {
     currentExperiment = {
       experimentId: result.experimentId,
       variantId: result.bucketId,
-      userId: context.userId || null
+      userId: context.userId || null,
+      sessionId: context.sessionId || null
     };
 
     return new Prompt(result.promptContent, result.promptMetadata.promptVersionId, result.experimentId, result.bucketId, this, result.promptMetadata.promptId);

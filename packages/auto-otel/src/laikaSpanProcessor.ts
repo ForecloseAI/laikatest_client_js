@@ -13,7 +13,7 @@ import { getProperties } from './properties';
  * Uses dynamic require to keep the client package optional - tracing works
  * standalone but gains experiment context injection when client is also used.
  */
-function getExperimentContext(): { experimentId: string; variantId: string; userId?: string } | null {
+function getExperimentContext(): { experimentId: string; variantId: string; userId?: string; sessionId?: string } | null {
   try {
     const client = require('@laikatest/js-client');
     if (client && typeof client.getCurrentExperiment === 'function') {
@@ -59,6 +59,9 @@ export class LaikaSpanProcessor implements SpanProcessor {
       span.setAttribute('laikatest.experiment.variant_id', experiment.variantId);
       if (experiment.userId) {
         span.setAttribute('laikatest.experiment.user_id', experiment.userId);
+      }
+      if (experiment.sessionId) {
+        span.setAttribute('laikatest.experiment.session_id', experiment.sessionId);
       }
     }
   }

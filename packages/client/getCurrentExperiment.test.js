@@ -42,13 +42,15 @@ describe('Experiment Context Integration', () => {
     const expectedStructure = {
       experimentId: expect.any(String),
       variantId: expect.any(String),
-      userId: expect.any(String)
+      userId: expect.any(String),
+      sessionId: expect.any(String)
     };
 
     // When getExperimentPrompt is called, it should set context like:
-    // { experimentId: 'exp-123', variantId: 'bucket-456', userId: 'user-789' }
+    // { experimentId: 'exp-123', variantId: 'bucket-456', userId: 'user-789', sessionId: 'session-abc' }
     expect(expectedStructure).toHaveProperty('experimentId');
     expect(expectedStructure).toHaveProperty('variantId');
     expect(expectedStructure).toHaveProperty('userId');
+    expect(expectedStructure).toHaveProperty('sessionId');
   });
 });
