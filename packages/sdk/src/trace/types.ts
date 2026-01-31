@@ -1,12 +1,15 @@
-/**
- * Callback function for trace operations
- */
-export type TraceCallback<T> = () => Promise<T>;
+import { Span } from '@opentelemetry/api';
 
 /**
- * Synchronous callback function for trace operations
+ * Callback function for trace operations with span access
+ * The span parameter allows adding custom attributes, events, and metadata
  */
-export type TraceSyncCallback<T> = () => T;
+export type TraceCallback<T> = (span: Span) => Promise<T>;
+
+/**
+ * Synchronous callback function for trace operations with span access
+ */
+export type TraceSyncCallback<T> = (span: Span) => T;
 
 /**
  * Operation types for semantic tracing
@@ -21,3 +24,6 @@ export type OperationType =
   | 'step'
   | 'generation'
   | 'evaluation';
+
+// Re-export Span for convenience
+export type { Span } from '@opentelemetry/api';

@@ -22,6 +22,7 @@ export {
   shutdown,
   withSpan,
   withSpanSync,
+  getActiveSpan,
 } from '@laikatest/auto-otel';
 
 // Re-export from client for convenience
@@ -47,4 +48,4 @@ export type {
 
 // AI-native tracing API
 export { trace } from './trace';
-export type { TraceCallback, TraceSyncCallback, OperationType } from './trace';
+export type { TraceCallback, TraceSyncCallback, OperationType, Span } from './trace';
