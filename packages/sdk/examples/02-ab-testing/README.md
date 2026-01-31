@@ -68,6 +68,10 @@ Done!
 3. **Score Tracking**: Call `pushScore()` to record outcomes (success rate, ratings, etc.)
 4. **Analysis**: View experiment results in the LaikaTest dashboard
 
+## Important: Mandatory Shutdown
+
+Always call `laika.shutdown()` before your process exits. This ensures all traces are flushed and resources are cleaned up. Failing to call shutdown may result in lost data.
+
 ## Customizing
 
 Edit `index.ts` to:

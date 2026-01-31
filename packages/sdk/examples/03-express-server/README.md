@@ -7,7 +7,7 @@ Demonstrates `@laikatest/sdk` integration in an Express.js web server with per-r
 - **Server Integration**: SDK initialization at server startup
 - **Context Middleware**: Extract session/user from request headers
 - **Per-Request Tracing**: Each request has its own context in traces
-- **Graceful Shutdown**: Proper cleanup on SIGTERM/SIGINT
+- **Mandatory Graceful Shutdown**: Always call `laika.shutdown()` on SIGTERM/SIGINT to flush traces
 
 ## Setup
 
@@ -83,7 +83,8 @@ Request with Headers
 
 ## Production Considerations
 
-1. **Auth Integration**: Replace header extraction with your auth system
-2. **Error Handling**: Add proper error boundaries and logging
-3. **Rate Limiting**: Add rate limiting for production use
-4. **Health Checks**: Expand health check for load balancers
+1. **Mandatory Shutdown**: Always handle SIGTERM/SIGINT to call `laika.shutdown()` before exit
+2. **Auth Integration**: Replace header extraction with your auth system
+3. **Error Handling**: Add proper error boundaries and logging
+4. **Rate Limiting**: Add rate limiting for production use
+5. **Health Checks**: Expand health check for load balancers

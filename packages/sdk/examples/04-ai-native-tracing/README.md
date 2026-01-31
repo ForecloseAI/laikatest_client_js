@@ -147,3 +147,7 @@ All helpers create spans with semantic names in the format `operation.name`:
 ### Automatic Context Propagation
 
 All child spans automatically inherit the parent context, creating a proper trace hierarchy without manual context passing.
+
+### Mandatory Shutdown
+
+Always call `laika.shutdown()` before your process exits. This is mandatory to flush all pending traces and clean up resources. Failing to call shutdown may result in lost trace data.

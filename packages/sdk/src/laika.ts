@@ -109,7 +109,14 @@ export class LaikaTest {
 
   /**
    * Shutdown both tracing and client resources.
-   * Call this before process exit for clean shutdown.
+   *
+   * **IMPORTANT: Calling this method is mandatory before process exit.**
+   *
+   * Failing to call shutdown() will result in:
+   * - Lost traces that haven't been flushed to the server
+   * - Resource leaks
+   *
+   * For long-running servers, call this in your SIGTERM/SIGINT handlers.
    */
   async shutdown(): Promise<void> {
     const errors: Error[] = [];
