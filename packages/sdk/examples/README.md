@@ -42,7 +42,7 @@ The simplest example - shows how to:
 - Initialize the SDK with just your API key
 - Set session and user context for trace grouping
 - Make OpenAI calls that are automatically traced
-- Properly shutdown the SDK
+- **Properly shutdown the SDK (mandatory)**
 
 ### 02-ab-testing
 
@@ -58,7 +58,7 @@ Full server integration pattern:
 - SDK initialization at server startup
 - Middleware for per-request context (session/user from headers)
 - API endpoints that leverage tracing
-- Graceful shutdown on SIGTERM
+- **Graceful shutdown on SIGTERM (mandatory)**
 
 ### 04-ai-native-tracing
 
@@ -67,6 +67,27 @@ AI-native semantic tracing API:
 - Agent workflow tracing (agent, tool, step)
 - LLM operations (generation, evaluation)
 - Generic spans for custom use cases with attributes and events
+
+## Important: Mandatory Shutdown
+
+All examples demonstrate calling `laika.shutdown()` before process exit. **This is mandatory** to ensure:
+
+- All pending traces are flushed to the server
+- Resources are properly cleaned up
+- No data is lost
+
+For short-lived scripts:
+```typescript
+await laika.shutdown();
+```
+
+For long-running servers:
+```typescript
+process.on('SIGTERM', async () => {
+  await laika.shutdown();
+  process.exit(0);
+});
+```
 
 ## Viewing Traces
 

@@ -51,9 +51,33 @@ await prompt.pushScore(
   { userId: 'user-123' }
 );
 
-// Cleanup before exit
+// IMPORTANT: Always call shutdown before exit (mandatory)
 await laika.shutdown();
 ```
+
+## Shutdown (Mandatory)
+
+**Important:** You must call `laika.shutdown()` before your process exits. This is mandatory to ensure:
+
+- All pending traces are flushed to the server
+- Resources are properly cleaned up
+- No data is lost
+
+```typescript
+// Always call shutdown before process exit
+await laika.shutdown();
+```
+
+For long-running servers, handle process signals:
+
+```typescript
+process.on('SIGTERM', async () => {
+  await laika.shutdown();
+  process.exit(0);
+});
+```
+
+Failing to call `shutdown()` may result in lost traces and resource leaks.
 
 ## Configuration
 
@@ -293,7 +317,7 @@ Each span also includes:
 | `LaikaTest.init(config)` | Initialize SDK (static factory) |
 | `laika.getPrompt(name, options?)` | Fetch prompt by name |
 | `laika.getExperimentPrompt(title, context?)` | Get A/B tested prompt |
-| `laika.shutdown()` | Cleanup resources |
+| `laika.shutdown()` | **Mandatory.** Cleanup resources and flush traces |
 | `laika.isTracingEnabled()` | Check if tracing is on |
 | `laika.isExperimentsEnabled()` | Check if experiments is on |
 

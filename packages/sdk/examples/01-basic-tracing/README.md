@@ -7,7 +7,7 @@ Demonstrates automatic OpenTelemetry tracing for OpenAI calls using `@laikatest/
 - **Minimal SDK Initialization**: Just your API key needed - everything else auto-detected
 - **Automatic Tracing**: OpenAI calls are traced without code changes
 - **Context Injection**: Session ID, user ID, and custom properties appear in traces
-- **Clean Shutdown**: Proper resource cleanup with `laika.shutdown()`
+- **Mandatory Shutdown**: Always call `laika.shutdown()` before exit to flush traces and clean up resources
 
 ## Setup
 
